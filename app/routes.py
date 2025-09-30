@@ -2,7 +2,6 @@ from flask import Blueprint, request, jsonify
 from .models import Usuario, Reporte, Comentario, Evidencia, HistorialEstado, Funcionario, EstadoReporte, EntidadPublica, Zona, Apoyo, Categoria
 from . import db
 
-# Creamos un Blueprint. El primer argumento es el nombre del blueprint.
 main = Blueprint('main', __name__)
 
 @main.route('/')
@@ -34,7 +33,6 @@ def get_usuario(user_id):
     usuario = Usuario.query.get_or_404(user_id)
     return jsonify(usuario.to_dict())
 
-# Endpoint para OBTENER todos los reportes y para CREAR uno nuevo
 
 @main.route('/reportes', methods=['GET', 'POST'])
 def handle_reportes():
