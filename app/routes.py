@@ -47,7 +47,7 @@ def login():
         }
         return jsonify(user_data)
     else:
-        return jsonify({'message': 'Usuario no existe'}), 400
+        return jsonify({'message': 'Correo o Contraseña incorrecta'}), 400
 
 
 @main.route('/usuarios/<int:user_id>', methods=['GET'])
