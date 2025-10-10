@@ -1,8 +1,9 @@
 from flask import Blueprint, request, jsonify
 from .models import Usuario, Reporte, Comentario, Evidencia, HistorialEstado, Funcionario, EstadoReporte, EntidadPublica, Zona, Apoyo, Categoria
 from . import db
+from werkzeug.security import generate_password_hash, check_password_hash
 
-# Creamos un Blueprint. El primer argumento es el nombre del blueprint.
+
 main = Blueprint('main', __name__)
 
 @main.route('/')
@@ -19,7 +20,7 @@ def handle_usuarios():
         nuevo_usuario = Usuario(
             nombre=data['nombre'],
             email=data['email'],
-            contrasena_hash=data['contrasena'],
+            contrasena_hash=generate_password_hash(data['contrasena']),
             telefono=data.get('telefono')
         )
         db.session.add(nuevo_usuario)
@@ -28,13 +29,32 @@ def handle_usuarios():
     else:
         usuarios = Usuario.query.all()
         return jsonify([usuario.to_dict() for usuario in usuarios])
+    
+
+@main.route('/iniciosesion',methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data['email']
+    contrasena = data['contrasena_hash']
+    
+    user = Usuario.query.filter_by(email=email).first()
+
+    if user and user.check_password(contrasena):
+        user_data = {
+            'id': user.id,
+            'nombre': user.nombre,
+            'email': user.email
+        }
+        return jsonify(user_data)
+    else:
+        return jsonify({'message': 'Correo o Contraseña incorrecta'}), 400
+
 
 @main.route('/usuarios/<int:user_id>', methods=['GET'])
 def get_usuario(user_id):
     usuario = Usuario.query.get_or_404(user_id)
     return jsonify(usuario.to_dict())
 
-# Endpoint para OBTENER todos los reportes y para CREAR uno nuevo
 
 @main.route('/reportes', methods=['GET', 'POST'])
 def handle_reportes():

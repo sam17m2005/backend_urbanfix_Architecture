@@ -1,11 +1,12 @@
 from . import db
+from werkzeug.security import generate_password_hash, check_password_hash
 
 class Usuario(db.Model):
     __tablename__ = 'usuarios'
 
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(100), unique=True, nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False) # Mk yo creo que el inicio de sesión solo sea por emaiL
     contrasena_hash = db.Column(db.String, nullable=False)
     telefono = db.Column(db.String(20))
     fecha_registro = db.Column(db.TIMESTAMP, server_default=db.func.now())
@@ -18,6 +19,11 @@ class Usuario(db.Model):
             'telefono': self.telefono,
             'fecha_registro': self.fecha_registro.isoformat()
         }
+    
+    #Seteamos la contraseña bastante a la fuerza entonces no creamos metodo para crear contraseña, pero si para checkear
+
+    def check_password(self, contrasena_hash):
+        return check_password_hash(self.contrasena_hash, contrasena_hash)
 
 class Reporte(db.Model):
     __tablename__ = 'reportes'
