@@ -30,24 +30,33 @@ def handle_usuarios():
         usuarios = Usuario.query.all()
         return jsonify([usuario.to_dict() for usuario in usuarios])
     
-
-@main.route('/iniciosesion',methods=['POST'])
+#Endpoint Inicio de sesion
+@main.route('/login',methods=['POST'])
 def login():
     data = request.get_json()
+    if not data or not data.get('email') or not data.get('contrasena'):
+        return jsonify({'message': 'Faltan email o contraseña'}), 400
+    
     email = data['email']
-    contrasena = data['contrasena_hash']
+    contrasena = data['contrasena']
     
     user = Usuario.query.filter_by(email=email).first()
-
     if user and user.check_password(contrasena):
-        user_data = {
-            'id': user.id,
-            'nombre': user.nombre,
-            'email': user.email
-        }
-        return jsonify(user_data)
-    else:
-        return jsonify({'message': 'Correo o Contraseña incorrecta'}), 400
+        return jsonify({
+            'message': 'Inicio de sesión exitoso',
+            'role': 'usuario',
+            'user_data': user.to_dict()
+        }), 200
+    
+    funcionario = Funcionario.query.filter_by(email=email).first()
+    if funcionario and funcionario.check_password(contrasena):
+        return jsonify({
+            'message': 'Inicio de sesión exitoso',
+            'role': 'funcionario',
+            'user_data': funcionario.to_dict()
+        }), 200
+    
+    return jsonify({'message': 'Credenciales incorrectas'}), 401
 
 
 @main.route('/usuarios/<int:user_id>', methods=['GET'])
@@ -125,3 +134,59 @@ def crear_comentario(reporte_id):
     db.session.commit()
 
     return jsonify({'message': 'Comentario creado exitosamente', 'comentario': nuevo_comentario.to_dict()}), 201
+
+#Endpoint para Entidades
+@main.route('/entidades', methods=['GET', 'POST'])
+def handle_entidades():
+    if request.method == 'POST':
+        data = request.get_json()
+        if not data or not data.get('nombre'):
+            return jsonify({'message': 'El campo "nombre" es obligatorio'}), 400
+        
+        nueva_entidad = EntidadPublica(nombre=data['nombre'])
+        db.session.add(nueva_entidad)
+        db.session.commit()
+
+        return jsonify({
+            'message': 'Entidad pública creada exitosamente',
+            'entidad': nueva_entidad.to_dict()
+        }), 200
+    
+    else:
+        entidades = EntidadPublica.query.all()
+        return jsonify([entidad.to_dict() for entidad in entidades])
+
+
+#Endpoint para Funcionarios
+@main.route('/funcionarios', methods=['POST'])
+def crear_funcionario():
+    data = request.get_json()
+
+    required_fields = ['nombre', 'email', 'contrasena', 'entidad_id']
+    if not all(field in data for field in required_fields):
+        return jsonify({'message': 'Faltan datos obligatorios'}), 400
+    
+    nuevo_funcionario = Funcionario(
+        nombre=data['nombre'],
+        email=data['email'],
+        contrasena_hash=generate_password_hash(data['contrasena']),
+        entidad_id=data['entidad_id'],
+        cargo=data.get('cargo'),
+        legajo=data.get('legajo')
+    )
+
+    db.session.add(nuevo_funcionario)
+    db.session.commit()
+
+    return jsonify({
+        'message': 'Funcionario creado exitosamente',
+        'funcionario': nuevo_funcionario.to_dict()
+    }), 200
+
+@main.route('/funcionarios', methods=['GET'])
+def get_funcionarios():
+    try:
+        funcionarios = Funcionario.query.all()
+        return jsonify([f.to_dict() for f in funcionarios]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

@@ -22,8 +22,8 @@ class Usuario(db.Model):
     
     #Seteamos la contraseña bastante a la fuerza entonces no creamos metodo para crear contraseña, pero si para checkear
 
-    def check_password(self, contrasena_hash):
-        return check_password_hash(self.contrasena_hash, contrasena_hash)
+    def check_password(self, contrasena):
+        return check_password_hash(self.contrasena_hash, contrasena)
 
 class Reporte(db.Model):
     __tablename__ = 'reportes'
@@ -132,7 +132,14 @@ class Funcionario(db.Model):
     # --- Relación ---
     entidad_id = db.Column(db.Integer, db.ForeignKey('entidades_publicas.id'), nullable=False)
 
+    def check_password(self, contrasena):
+        return check_password_hash(self.contrasena_hash, contrasena)
+
     def to_dict(self):
+
+        entidad = EntidadPublica.query.get(self.entidad_id)
+        entidad_nombre = entidad.nombre if entidad else None
+
         return {
             'id': self.id,
             'nombre': self.nombre,
@@ -140,6 +147,7 @@ class Funcionario(db.Model):
             'cargo': self.cargo,
             'legajo': self.legajo,
             'entidad_id': self.entidad_id,
+            'entidad_nombre': entidad_nombre,
             'fecha_registro': self.fecha_registro.isoformat() if self.fecha_registro else None
         }
 
