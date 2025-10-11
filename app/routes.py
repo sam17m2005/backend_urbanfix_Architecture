@@ -190,3 +190,39 @@ def get_funcionarios():
         return jsonify([f.to_dict() for f in funcionarios]), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+#Endpoints ACTUALIZACION de usuarios(Pendiente para que funcione porque me metio el dih XD)
+@main.route('/usuarios/<int:user_id>', methods=['PUT'])
+def update_usuario(user_id):
+    usuario = Usuario.query.get_or_404(user_id)
+    data = request.get_json()
+
+    if not data:
+        return jsonify({'message': 'No se recibieron datos'}), 400
+
+    if 'nombre' in data:
+        usuario.nombre = data['nombre']
+
+    if 'contrasena' in data and data['contrasena']:
+        usuario.contrasena_hash = generate_password_hash(data['contrasena'])
+
+    db.session.commit()
+    return jsonify({'message': 'Perfil de usuario actualizado exitosamente', 'usuario': usuario.to_dict()}), 200
+
+
+@main.route('/funcionarios/<int:funcionario_id>', methods=['PUT'])
+def update_funcionario(funcionario_id):
+    funcionario = Funcionario.query.get_or_404(funcionario_id)
+    data = request.get_json()
+
+    if not data:
+        return jsonify({'message': 'No se recibieron datos'}), 400
+
+    if 'nombre' in data:
+        funcionario.nombre = data['nombre']
+
+    if 'contrasena' in data and data['contrasena']:
+        funcionario.contrasena_hash = generate_password_hash(data['contrasena'])
+
+    db.session.commit()
+    return jsonify({'message': 'Perfil de funcionario actualizado exitosamente', 'funcionario': funcionario.to_dict()}), 200
