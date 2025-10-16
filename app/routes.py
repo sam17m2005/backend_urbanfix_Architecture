@@ -226,3 +226,20 @@ def update_funcionario(funcionario_id):
 
     db.session.commit()
     return jsonify({'message': 'Perfil de funcionario actualizado exitosamente', 'funcionario': funcionario.to_dict()}), 200
+
+
+#Endpint para eliminar cuenta
+@main.route('/usuarios/<int:user_id>', methods=['DELETE'])
+def delete_usuario(user_id):
+    usuario = Usuario.query.get_or_404(user_id)
+    db.session.delete(usuario)
+    db.session.commit()
+    return jsonify({'message': 'Usuario eliminado exitosamente'}), 200
+
+
+@main.route('/funcionarios/<int:funcionario_id>', methods=['DELETE'])
+def delete_funcionario(funcionario_id):
+    funcionario = Funcionario.query.get_or_404(funcionario_id)
+    db.session.delete(funcionario)
+    db.session.commit()
+    return jsonify({'message': 'Funcionario eliminado exitosamente'}), 200

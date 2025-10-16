@@ -1,4 +1,5 @@
 from . import db
+from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 
 class Usuario(db.Model):
@@ -9,7 +10,12 @@ class Usuario(db.Model):
     email = db.Column(db.String(100), unique=True, nullable=False) # Mk yo creo que el inicio de sesión solo sea por emaiL
     contrasena_hash = db.Column(db.String, nullable=False)
     telefono = db.Column(db.String(20))
-    fecha_registro = db.Column(db.TIMESTAMP, server_default=db.func.now())
+    fecha_registro = db.Column(db.TIMESTAMP, nullable=False, default=datetime.utcnow)
+
+    def __init__(self, **kwargs):
+        super(Usuario, self).__init__(**kwargs)
+        if self.fecha_registro is None:
+            self.fecha_registro = datetime.utcnow()
 
     def to_dict(self):
         return {
@@ -131,6 +137,11 @@ class Funcionario(db.Model):
 
     # --- Relación ---
     entidad_id = db.Column(db.Integer, db.ForeignKey('entidades_publicas.id'), nullable=False)
+
+    def __init__(self, **kwargs):
+        super(Funcionario, self).__init__(**kwargs)
+        if self.fecha_registro is None:
+            self.fecha_registro = datetime.utcnow()
 
     def check_password(self, contrasena):
         return check_password_hash(self.contrasena_hash, contrasena)
