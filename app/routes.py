@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from sqlalchemy.exc import IntegrityError
 from .models import Usuario, Reporte, Comentario, Evidencia, HistorialEstado, Funcionario, EstadoReporte, EntidadPublica, Zona, Apoyo, Categoria
 from . import db
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -23,9 +24,13 @@ def handle_usuarios():
             contrasena_hash=generate_password_hash(data['contrasena']),
             telefono=data.get('telefono')
         )
-        db.session.add(nuevo_usuario)
-        db.session.commit()
-        return jsonify({'message': 'Usuario creado exitosamente', 'usuario': nuevo_usuario.to_dict()}), 201
+        try: 
+            db.session.add(nuevo_usuario)
+            db.session.commit()
+            return jsonify({'message': 'Usuario creado exitosamente', 'usuario': nuevo_usuario.to_dict()}), 201
+        except IntegrityError:
+            db.session.rollback() 
+            return jsonify({'message': 'Ya existe una cuenta con este correo electrónico.'}), 409
     else:
         usuarios = Usuario.query.all()
         return jsonify([usuario.to_dict() for usuario in usuarios])
@@ -41,22 +46,30 @@ def login():
     contrasena = data['contrasena']
     
     user = Usuario.query.filter_by(email=email).first()
-    if user and user.check_password(contrasena):
-        return jsonify({
-            'message': 'Inicio de sesión exitoso',
-            'role': 'usuario',
-            'user_data': user.to_dict()
-        }), 200
-    
     funcionario = Funcionario.query.filter_by(email=email).first()
-    if funcionario and funcionario.check_password(contrasena):
-        return jsonify({
-            'message': 'Inicio de sesión exitoso',
-            'role': 'funcionario',
-            'user_data': funcionario.to_dict()
-        }), 200
-    
-    return jsonify({'message': 'Credenciales incorrectas'}), 401
+
+    if not user and not funcionario:
+        return jsonify({'message': 'La cuenta no existe. Por favor, regístrate.'}), 404
+
+    if user:
+        if user.check_password(contrasena):
+            return jsonify({
+                'message': 'Inicio de sesión exitoso',
+                'role': 'usuario',
+                'user_data': user.to_dict()
+            }), 200
+        else:
+            return jsonify({'message': 'Credenciales incorrectas'}), 401
+
+    if funcionario:
+        if funcionario.check_password(contrasena):
+            return jsonify({
+                'message': 'Inicio de sesión exitoso',
+                'role': 'funcionario',
+                'user_data': funcionario.to_dict()
+            }), 200
+        else:
+            return jsonify({'message': 'Credenciales incorrectas'}), 401
 
 
 @main.route('/usuarios/<int:user_id>', methods=['GET'])
@@ -175,14 +188,14 @@ def crear_funcionario():
         legajo=data.get('legajo')
     )
 
-    db.session.add(nuevo_funcionario)
-    db.session.commit()
-
-    return jsonify({
-        'message': 'Funcionario creado exitosamente',
-        'funcionario': nuevo_funcionario.to_dict()
-    }), 200
-
+    try: 
+        db.session.add(nuevo_funcionario)
+        db.session.commit()
+        return jsonify({'message': 'Funcionario creado exitosamente', 'usuario': nuevo_funcionario.to_dict()}), 201
+    except IntegrityError:
+        db.session.rollback() 
+        return jsonify({'message': 'Ya existe una cuenta con este correo electrónico.'}), 409
+    
 @main.route('/funcionarios', methods=['GET'])
 def get_funcionarios():
     try:
