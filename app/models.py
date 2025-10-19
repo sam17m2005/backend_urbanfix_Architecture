@@ -11,6 +11,7 @@ class Usuario(db.Model):
     contrasena_hash = db.Column(db.String, nullable=False)
     telefono = db.Column(db.String(20))
     fecha_registro = db.Column(db.TIMESTAMP, nullable=False, default=datetime.utcnow)
+    imagen = db.Column(db.String(200), unique=True, nullable=False)
 
     def __init__(self, **kwargs):
         super(Usuario, self).__init__(**kwargs)
@@ -36,11 +37,13 @@ class Reporte(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     descripcion = db.Column(db.Text, nullable=False)
-    codigo_folio = db.Column(db.String(50), nullable=False) 
+    direccion = db.Column(db.String(100), nullable=False)
+    referencia = db.Column(db.String(50), nullable=False) 
     latitud = db.Column(db.Numeric(10, 8), nullable=False)  
-    longitud = db.Column(db.Numeric(11, 8), nullable=False) 
-    prioridad = db.Column(db.Integer, nullable=True)        
+    longitud = db.Column(db.Numeric(11, 8), nullable=False)
     fecha_creacion = db.Column(db.TIMESTAMP, server_default=db.func.now())
+    img_prueba_1 = db.Column(db.String(200), unique=True, nullable=False) #Imagen 1
+    img_prueba_2 = db.Column(db.String(200)) #Imagen 2
     
     # --- Relaciones (Claves Foráneas) ---
     usuario_creador_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
@@ -51,10 +54,12 @@ class Reporte(db.Model):
         return {
             'id': self.id,
             'descripcion': self.descripcion,
-            'codigo_folio': self.codigo_folio,
+            'direccion': self.direccion,
+            'referencia': self.referencia,
+            'img_prueba_1': self.img_prueba_1,
+            'img_prueba_2': self.img_prueba_2,
             'latitud': str(self.latitud),
             'longitud': str(self.longitud),
-            'prioridad': self.prioridad,
             'fecha_creacion': self.fecha_creacion.isoformat() if self.fecha_creacion else None,
             'usuario_creador_id': self.usuario_creador_id,
             'categoria_id': self.categoria_id,
@@ -82,25 +87,6 @@ class Comentario(db.Model):
             'fecha_creacion': self.fecha_creacion.isoformat()
         }
 
-class Evidencia(db.Model):
-    __tablename__ = 'evidencias'
-
-    id = db.Column(db.Integer, primary_key=True)
-    url_archivo = db.Column(db.String(255), nullable=False) 
-    tipo_archivo = db.Column(db.String(50), nullable=True) 
-    fecha_subida = db.Column(db.TIMESTAMP, server_default=db.func.now())
-
-    # Relaciones
-    reporte_id = db.Column(db.Integer, db.ForeignKey('reportes.id'), nullable=False)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'reporte_id': self.reporte_id,
-            'url_archivo': self.url_archivo,
-            'tipo_archivo': self.tipo_archivo,
-            'fecha_subida': self.fecha_subida.isoformat() if self.fecha_subida else None
-        }
 
 class HistorialEstado(db.Model):
     __tablename__ = 'historial_estados'
