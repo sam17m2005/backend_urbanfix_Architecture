@@ -83,21 +83,23 @@ def handle_reportes():
     if request.method == 'POST':
         data = request.get_json()
         
-        required_fields = ['descripcion', 'latitud', 'longitud', 'usuario_creador_id', 'categoria_id', 'codigo_folio']
+        required_fields = ['descripcion','direccion','referencia','latitud', 'longitud', 'usuario_creador_id', 'categoria_id', 'img_prueba_1']
         
         if not all(field in data for field in required_fields):
             return jsonify({'message': 'Faltan datos obligatorios'}), 400
 
         nuevo_reporte = Reporte(
             descripcion=data['descripcion'],
+            direccion=data['direccion'],
+            referencia=data['referencia'],
+            img_prueba_1=data['https://urbanfiximagenesreportes.s3.us-east-1.amazonaws.com/nombre de la imagen'], #TODO
+            img_prueba_2=data['si o que. mirar como handelear'], #TODO
             latitud=data['latitud'],
             longitud=data['longitud'],
             usuario_creador_id=data['usuario_creador_id'],
-            categoria_id=data['categoria_id'],
-            codigo_folio=data['codigo_folio'],
-            prioridad=data.get('prioridad'),
-            funcionario_asignado_id=data.get('funcionario_asignado_id')
+            categoria_id=data['categoria_id']
         )
+
         db.session.add(nuevo_reporte)
         db.session.commit()
         
