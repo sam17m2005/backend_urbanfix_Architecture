@@ -79,7 +79,7 @@ def get_usuario(user_id):
 
 
 @main.route('/reportes', methods=['GET', 'POST'])
-def handle_reportes():
+def handle_reportes(): #TODO, rTOCA MIRAR COMO RECONSTRUIR EL BITMAP Y YA LUEGO MIRAR COMO HACER LA VAINA BIEN.
     if request.method == 'POST':
         data = request.get_json()
         
