@@ -24,7 +24,8 @@ class Usuario(db.Model):
             'nombre': self.nombre,
             'email': self.email,
             'telefono': self.telefono,
-            'fecha_registro': self.fecha_registro.isoformat()
+            'fecha_registro': self.fecha_registro.isoformat(),
+            'imagen': self.imagen
         }
     
     #Seteamos la contraseña bastante a la fuerza entonces no creamos metodo para crear contraseña, pero si para checkear
@@ -122,6 +123,7 @@ class Funcionario(db.Model):
     cargo = db.Column(db.String(100))
     legajo = db.Column(db.String(50))
     fecha_registro = db.Column(db.TIMESTAMP, server_default=db.func.now())
+    foto_perfil_url = db.Column(db.String(255), nullable=True)
 
     # --- Relación ---
     entidad_id = db.Column(db.Integer, db.ForeignKey('entidades_publicas.id'), nullable=False)
@@ -147,7 +149,8 @@ class Funcionario(db.Model):
             'legajo': self.legajo,
             'entidad_id': self.entidad_id,
             'entidad_nombre': entidad_nombre,
-            'fecha_registro': self.fecha_registro.isoformat() if self.fecha_registro else None
+            'fecha_registro': self.fecha_registro.isoformat() if self.fecha_registro else None,
+            'foto_perfil_url': self.foto_perfil_url
         }
 
 class EstadoReporte(db.Model):

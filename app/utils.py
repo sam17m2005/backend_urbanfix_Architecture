@@ -7,7 +7,8 @@ from config import Config
 from . import s3_client
 
 # --- Cliente S3 y Configuración del Bucket ---
-S3_REPORTES = Config.S3_REPORTES 
+S3_REPORTES = Config.S3_REPORTES
+S3_PERFILES = Config.S3_PERFILES 
 
 def upload_base64_to_s3(base64_string):
     if not base64_string: #Esta monda cambia el focking base64  a imagen 
@@ -35,6 +36,38 @@ def upload_base64_to_s3(base64_string):
         )
         
         s3_url = f"https://{S3_REPORTES}.s3.{Config.AWS_REGION}.amazonaws.com/{file_name}"
+        return s3_url
+
+    except Exception as e:
+        print(f"Error al subir a S3: {e}")
+        return None
+    
+def upload_profile_pic_to_s3(base64_string):
+    if not base64_string: #Esta monda cambia el focking base64  a imagen 
+        return None
+
+    try:
+        if ',' in base64_string:
+            _, encoded_data = base64_string.split(',', 1)
+        else:
+            encoded_data = base64_string
+            
+        image_bytes = base64.b64decode(encoded_data)
+        image = Image.open(io.BytesIO(image_bytes))
+        output_buffer = io.BytesIO()
+        image.save(output_buffer, format='PNG')
+        output_buffer.seek(0)
+
+        file_name = f"{uuid.uuid4()}.png"
+
+        s3_client.upload_fileobj(
+            output_buffer,
+            S3_PERFILES,
+            file_name,
+            ExtraArgs={'ContentType': 'image/png'}
+        )
+        
+        s3_url = f"https://{S3_PERFILES}.s3.{Config.AWS_REGION}.amazonaws.com/{file_name}"
         return s3_url
 
     except Exception as e:
