@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from sqlalchemy.exc import IntegrityError
-from .models import Usuario, Reporte, Comentario, Evidencia, HistorialEstado, Funcionario, EstadoReporte, EntidadPublica, Zona, Apoyo, Categoria
+from .models import Usuario, Reporte, Comentario, HistorialEstado, Funcionario, EstadoReporte, EntidadPublica, Zona, Apoyo, Categoria
 from . import db
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -92,8 +92,8 @@ def handle_reportes(): #TODO, rTOCA MIRAR COMO RECONSTRUIR EL BITMAP Y YA LUEGO 
             descripcion=data['descripcion'],
             direccion=data['direccion'],
             referencia=data['referencia'],
-            img_prueba_1=data['https://urbanfiximagenesreportes.s3.us-east-1.amazonaws.com/nombre de la imagen'], #TODO
-            img_prueba_2=data['si o que. mirar como handelear'], #TODO
+            img_prueba_1=data['img_prueba_1'], #Esto toca quitarlo y solo ponerle el nombre de la imagen.
+            img_prueba_2=data['img_prueba_2'], #TODO
             latitud=data['latitud'],
             longitud=data['longitud'],
             usuario_creador_id=data['usuario_creador_id'],
