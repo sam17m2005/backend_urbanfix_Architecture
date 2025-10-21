@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from sqlalchemy.exc import IntegrityError
 from .models import Usuario, Reporte, Comentario, HistorialEstado, Funcionario, EstadoReporte, EntidadPublica, Zona, Apoyo, Categoria
+from .utils import upload_base64_to_s3
 from . import db
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -79,35 +80,86 @@ def get_usuario(user_id):
 
 
 @main.route('/reportes', methods=['GET', 'POST'])
-def handle_reportes(): #TODO, rTOCA MIRAR COMO RECONSTRUIR EL BITMAP Y YA LUEGO MIRAR COMO HACER LA VAINA BIEN.
+def handle_reportes():
+    """
+    Maneja la creación de nuevos reportes (POST) y la obtención
+    de todos los reportes (GET).
+    """
+    
+    # --- LÓGICA PARA CREAR UN NUEVO REPORTE ---
     if request.method == 'POST':
         data = request.get_json()
         
-        required_fields = ['descripcion','direccion','referencia','latitud', 'longitud', 'usuario_creador_id', 'categoria_id', 'img_prueba_1']
+        # 1. Validar que los campos de texto requeridos existan
+        required_fields = [
+            'descripcion', 'direccion', 'referencia', 
+            'latitud', 'longitud', 'usuario_creador_id', 
+            'categoria_id', 'img_prueba_1' # img_prueba_1 es obligatoria
+        ]
         
         if not all(field in data for field in required_fields):
             return jsonify({'message': 'Faltan datos obligatorios'}), 400
 
-        nuevo_reporte = Reporte(
-            descripcion=data['descripcion'],
-            direccion=data['direccion'],
-            referencia=data['referencia'],
-            img_prueba_1=data['img_prueba_1'], #Esto toca quitarlo y solo ponerle el nombre de la imagen.
-            img_prueba_2=data['img_prueba_2'], #TODO
-            latitud=data['latitud'],
-            longitud=data['longitud'],
-            usuario_creador_id=data['usuario_creador_id'],
-            categoria_id=data['categoria_id']
-        )
-
-        db.session.add(nuevo_reporte)
-        db.session.commit()
+        # Procesar la imagen 1 (obligatoria)
+        # Usamos .get() para evitar un KeyError si el campo no existe
+        img_1_base64 = data.get('img_prueba_1')
+        img_1_url = upload_base64_to_s3(img_1_base64)
         
-        return jsonify({'message': 'Reporte creado exitosamente', 'reporte': nuevo_reporte.to_dict()}), 201
+        if img_1_url is None:
+            # Si la imagen obligatoria falla al subirse, rechazamos la petición
+            return jsonify({'message': 'Error al procesar la imagen principal (img_prueba_1)'}), 400
+
+
+        img_2_base64 = data.get('img_prueba_2') # Será None si no viene
+        img_2_url = upload_base64_to_s3(img_2_base64) # La función maneja None
+        
+        
+        try:
+            nuevo_reporte = Reporte(
+                descripcion=data['descripcion'],
+                direccion=data['direccion'],
+                referencia=data['referencia'],
+                
+                img_prueba_1=img_1_url,  # <-- URL de S3
+                img_prueba_2=img_2_url,  # <-- URL de S3 (o None)
+                
+                latitud=data['latitud'],
+                longitud=data['longitud'],
+                usuario_creador_id=data['usuario_creador_id'],
+                categoria_id=data['categoria_id'],
+
+                tipo_evento=data['tipo_evento'] #XD
+            )
+
+            # Guardar en la base de datos
+            db.session.add(nuevo_reporte)
+            db.session.commit()
+            
+            # Devolver una respuesta exitosa
+            return jsonify({
+                'message': 'Reporte creado exitosamente', 
+                'reporte': nuevo_reporte.to_dict() # Asumo que tienes un método to_dict()
+            }), 201
+
+        except Exception as e:
+            # Si algo falla al guardar en BD, hacemos rollback
+            db.session.rollback()
+            print(f"Error al guardar en la base de datos: {e}")
+            # Idealmente, aquí deberías borrar las imágenes de S3 que 
+            # ya se subieron para no dejar basura, pero es más complejo.
+            return jsonify({'message': 'Error interno al guardar el reporte.'}), 500
     
-    else:
-        reportes = Reporte.query.all()
-        return jsonify([reporte.to_dict() for reporte in reportes])
+    # --- LÓGICA PARA OBTENER TODOS LOS REPORTES ---
+    else: # request.method == 'GET'
+        try:
+            reportes = Reporte.query.all()
+            # Convertimos cada objeto reporte a un diccionario
+            return jsonify([reporte.to_dict() for reporte in reportes]), 200
+        except Exception as e:
+            print(f"Error al consultar reportes: {e}")
+            return jsonify({'message': 'Error al obtener los reportes.'}), 500
+
+
 
 @main.route('/categorias', methods=['GET'])
 def get_categorias():

@@ -38,12 +38,14 @@ class Reporte(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     descripcion = db.Column(db.Text, nullable=False)
     direccion = db.Column(db.String(100), nullable=False)
-    referencia = db.Column(db.String(50), nullable=False) 
+    referencia = db.Column(db.String(100), nullable=False) 
     latitud = db.Column(db.Numeric(10, 8), nullable=False)  
     longitud = db.Column(db.Numeric(11, 8), nullable=False)
     fecha_creacion = db.Column(db.TIMESTAMP, server_default=db.func.now())
+    tipo_evento = db.Column(db.String(200), nullable=False) #XD como los odio amigos
     img_prueba_1 = db.Column(db.String(200), unique=True, nullable=False) #Imagen 1
     img_prueba_2 = db.Column(db.String(200)) #Imagen 2
+
     
     # --- Relaciones (Claves Foráneas) ---
     usuario_creador_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
