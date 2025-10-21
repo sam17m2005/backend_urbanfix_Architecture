@@ -159,6 +159,47 @@ def handle_reportes():
             print(f"Error al consultar reportes: {e}")
             return jsonify({'message': 'Error al obtener los reportes.'}), 500
 
+@main.route('/misreportes', methods=['GET'])
+def get_mis_reportes():
+    """
+    Endpoint para obtener los reportes de un usuario específico.
+    Recibe el ID del usuario como un query parameter.
+    Ejemplo de llamada: GET /misreportes?user_id=1
+    """
+    # 1 Obtener el ID de usuario desde los parámetros de la URL
+    user_id = request.args.get('user_id')
+
+    # 2 Validación
+    if not user_id:
+        return jsonify({'error': 'El parámetro user_id es obligatorio.'}), 400
+    try:
+        user_id_int = int(user_id)
+    except ValueError:
+        return jsonify({'error': 'El user_id debe ser un número entero válido.'}), 400
+
+    # 3 Consultar la base de datos
+    try:
+        reportes_del_usuario = Reporte.query.filter_by(usuario_creador_id=user_id_int).all()
+
+        
+        resultado_formateado = []
+        for reporte in reportes_del_usuario:
+            resultado_formateado.append({
+                "id": reporte.id,
+                "nombre": reporte.tipo_evento,
+                "imagen_prueba_1": reporte.img_prueba_1,
+                "fecha_creacion": reporte.fecha_creacion.isoformat() if reporte.fecha_creacion else None,
+                "direccion": reporte.direccion,
+                "estado": reporte.estado
+            })
+
+        return jsonify(resultado_formateado), 200
+
+    except Exception as e:
+        print(f"Error en /misreportes: {e}")
+        return jsonify({'error': 'Ocurrió un error en el servidor.'}), 500
+
+
 
 
 @main.route('/categorias', methods=['GET'])
