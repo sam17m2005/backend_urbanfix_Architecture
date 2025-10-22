@@ -46,6 +46,7 @@ class Reporte(db.Model):
     tipo_evento = db.Column(db.String(200), nullable=False) #XD como los odio amigos
     img_prueba_1 = db.Column(db.String(200), unique=True, nullable=False) #Imagen 1
     img_prueba_2 = db.Column(db.String(200)) #Imagen 2
+    estado = db.Column(db.String(50))
 
     
     # --- Relaciones (Claves Foráneas) ---
