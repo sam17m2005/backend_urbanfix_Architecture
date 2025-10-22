@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from sqlalchemy.exc import IntegrityError
 from .models import Usuario, Reporte, Comentario, HistorialEstado, Funcionario, EstadoReporte, EntidadPublica, Zona, Apoyo, Categoria
-from .utils import upload_base64_to_s3
+from .utils import upload_base64_to_s3, upload_profile_pic_to_s3
 from . import db
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -158,6 +158,67 @@ def handle_reportes():
         except Exception as e:
             print(f"Error al consultar reportes: {e}")
             return jsonify({'message': 'Error al obtener los reportes.'}), 500
+
+#Imagenes de Perfiles
+
+@main.route('/usuarios/<int:user_id>/foto_perfil', methods=['POST'])
+def update_usuario_foto(user_id):
+    """
+    Actualiza la foto de perfil de un Usuario.
+    Espera un JSON con: { "foto_base64": "..." }
+    """
+    usuario = Usuario.query.get_or_404(user_id)
+    data = request.get_json()
+
+    if not data or 'foto_base64' not in data:
+        return jsonify({'message': 'No se proporcionó la imagen (foto_base64)'}), 400
+
+    img_base64 = data['foto_base64']
+    
+    # --- Llama a la nueva función de utils para perfiles ---
+    img_url = upload_profile_pic_to_s3(img_base64)
+
+    if img_url is None:
+        return jsonify({'message': 'Error al procesar y subir la imagen de perfil'}), 500
+
+    # --- Guarda la URL en el campo 'imagen' (como está en tu models.py) ---
+    usuario.imagen = img_url 
+    db.session.commit()
+
+    return jsonify({
+        'message': 'Foto de perfil actualizada exitosamente', 
+        'url': img_url
+    }), 200
+
+
+@main.route('/funcionarios/<int:funcionario_id>/foto_perfil', methods=['POST'])
+def update_funcionario_foto(funcionario_id):
+    """
+    Actualiza la foto de perfil de un Funcionario.
+    Espera un JSON con: { "foto_base64": "..." }
+    """
+    funcionario = Funcionario.query.get_or_404(funcionario_id)
+    data = request.get_json()
+
+    if not data or 'foto_base64' not in data:
+        return jsonify({'message': 'No se proporcionó la imagen (foto_base64)'}), 400
+
+    img_base64 = data['foto_base64']
+
+    # --- Llama a la nueva función de utils para perfiles ---
+    img_url = upload_profile_pic_to_s3(img_base64)
+
+    if img_url is None:
+        return jsonify({'message': 'Error al procesar y subir la imagen de perfil'}), 500
+
+    # --- Guarda la URL en el campo 'foto_perfil_url' (que añadiste a models.py) ---
+    funcionario.foto_perfil_url = img_url
+    db.session.commit()
+
+    return jsonify({
+        'message': 'Foto de perfil de funcionario actualizada exitosamente', 
+        'url': img_url
+    }), 200
 
 @main.route('/misreportes', methods=['GET'])
 def get_mis_reportes():
