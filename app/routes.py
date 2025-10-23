@@ -127,6 +127,8 @@ def handle_reportes():
                 longitud=data['longitud'],
                 usuario_creador_id=data['usuario_creador_id'],
                 categoria_id=data['categoria_id'],
+                estado='Nuevo',
+
 
                 tipo_evento=data['tipo_evento'] #XD
             )
@@ -227,10 +229,10 @@ def get_mis_reportes():
     Recibe el ID del usuario como un query parameter.
     Ejemplo de llamada: GET /misreportes?user_id=1
     """
-    # 1 Obtener el ID de usuario desde los parámetros de la URL
+    # 1. Obtener el ID de usuario desde los parámetros de la URL
     user_id = request.args.get('user_id')
 
-    # 2 Validación
+    # 2. Validación
     if not user_id:
         return jsonify({'error': 'El parámetro user_id es obligatorio.'}), 400
     try:
@@ -238,20 +240,29 @@ def get_mis_reportes():
     except ValueError:
         return jsonify({'error': 'El user_id debe ser un número entero válido.'}), 400
 
-    # 3 Consultar la base de datos
+    # 3. Consultar la base de datos (con JOIN)
     try:
-        reportes_del_usuario = Reporte.query.filter_by(usuario_creador_id=user_id_int).all()
+        # Usamos db.session.query() para seleccionar ambas tablas
+        # y .join() para unirlas por el categoria_id.
+        reportes_con_categoria = db.session.query(Reporte, Categoria).join(
+            Categoria, Reporte.categoria_id == Categoria.id
+        ).filter(
+            Reporte.usuario_creador_id == user_id_int
+        ).all()
+        # ----------------------------
 
-        
         resultado_formateado = []
-        for reporte in reportes_del_usuario:
+        
+        # Ahora iteramos sobre una lista de tuplas (reporte, categoria)
+        for reporte, categoria in reportes_con_categoria:
             resultado_formateado.append({
                 "id": reporte.id,
                 "nombre": reporte.tipo_evento,
                 "imagen_prueba_1": reporte.img_prueba_1,
                 "fecha_creacion": reporte.fecha_creacion.isoformat() if reporte.fecha_creacion else None,
                 "direccion": reporte.direccion,
-                "estado": reporte.estado
+                "estado": reporte.estado,
+                "categoria_nombre": categoria.nombre  # <-- ¡CAMPO AÑADIDO!
             })
 
         return jsonify(resultado_formateado), 200
@@ -259,8 +270,33 @@ def get_mis_reportes():
     except Exception as e:
         print(f"Error en /misreportes: {e}")
         return jsonify({'error': 'Ocurrió un error en el servidor.'}), 500
+    
 
+@main.route('/reportes/<int:reporte_id>', methods=['GET','DELETE'])
+def delete_reporte(reporte_id):
+    if request.method == 'DELETE':
+        try:
+            reporte_a_eliminar = Reporte.query.get(reporte_id)
 
+            if reporte_a_eliminar is None:
+                return jsonify({'error': 'Reporte no encontrado.'}), 404
+
+            # ▼▼▼ LÓGICA DE NEGOCIO AÑADIDA ▼▼▼
+            # Comprueba si el estado NO es uno de los permitidos para borrado
+            if reporte_a_eliminar.estado not in ['Nuevo', 'Resuelto']:
+                    # 403 Forbidden: Entendimos la petición, pero nos rehusamos a cumplirla.
+                return jsonify({'error': 'No se puede eliminar un reporte que está en proceso.'}), 403
+            # ▲▲▲ FIN DE LA LÓGICA ▲▲▲
+
+            db.session.delete(reporte_a_eliminar)
+            db.session.commit()
+
+            return jsonify({'message': 'Reporte eliminado exitosamente.'}), 200
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error en DELETE /reportes/<id>: {e}")
+            return jsonify({'error': 'Ocurrió un error en el servidor.'}), 500
 
 
 @main.route('/categorias', methods=['GET'])
