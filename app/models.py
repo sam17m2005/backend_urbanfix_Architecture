@@ -1,6 +1,7 @@
 from . import db
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import func
 
 class Usuario(db.Model):
     __tablename__ = 'usuarios'
@@ -54,7 +55,37 @@ class Reporte(db.Model):
     categoria_id = db.Column(db.Integer, db.ForeignKey('categorias.id'), nullable=False)
     funcionario_asignado_id = db.Column(db.Integer, db.ForeignKey('funcionarios.id'), nullable=True) 
 
-    def to_dict(self):
+    # CÓDIGO CORREGIDO
+    def to_dict(self, current_user_id=None):
+        
+        apoyo_count = db.session.query(func.count(Apoyo.id)).filter(
+            Apoyo.reporte_id == self.id,
+            Apoyo.tipo == 'like'
+        ).scalar() or 0
+        
+        desapoyo_count = db.session.query(func.count(Apoyo.id)).filter(
+            Apoyo.reporte_id == self.id,
+            Apoyo.tipo == 'dislike' 
+        ).scalar() or 0
+
+        current_user_reaction = None
+        if current_user_id:
+            reaction = db.session.query(Apoyo.tipo).filter(
+                Apoyo.reporte_id == self.id,
+                Apoyo.usuario_id == current_user_id
+            ).scalar()
+            current_user_reaction = reaction
+            
+        # ▼▼▼ LÍNEAS AÑADIDAS ▼▼▼
+        # 1. Busca la categoría para obtener su nombre
+        categoria = Categoria.query.get(self.categoria_id)
+        categoria_nombre = categoria.nombre if categoria else None
+        
+        # 2. (Opcional) El campo 'nombre' que faltaba en el Problema 1
+        #    viene de 'tipo_evento'
+        nombre_reporte = self.tipo_evento
+        # ▲▲▲ FIN DE LÍNEAS AÑADIDAS ▲▲▲
+
         return {
             'id': self.id,
             'descripcion': self.descripcion,
@@ -67,7 +98,16 @@ class Reporte(db.Model):
             'fecha_creacion': self.fecha_creacion.isoformat() if self.fecha_creacion else None,
             'usuario_creador_id': self.usuario_creador_id,
             'categoria_id': self.categoria_id,
-            'funcionario_asignado_id': self.funcionario_asignado_id
+            'funcionario_asignado_id': self.funcionario_asignado_id,
+            'apoyos_count': apoyo_count,
+            'desapoyos_count': desapoyo_count,
+            'current_user_reaction': current_user_reaction,
+            
+            # ▼▼▼ CAMPOS AÑADIDOS ▼▼▼
+            'estado': self.estado,
+            'categoria_nombre': categoria_nombre,
+            'nombre': nombre_reporte 
+            # ▲▲▲ FIN DE CAMPOS AÑADIDOS ▲▲▲
         }
 
 
@@ -199,18 +239,22 @@ class Apoyo(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     fecha_creacion = db.Column(db.TIMESTAMP, server_default=db.func.now())
+    tipo = db.Column(db.String(10), nullable=False, default='like')
 
     #Relaciones
 
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'),nullable=False)
     reporte_id = db.Column(db.Integer, db.ForeignKey('reportes.id'),nullable=False)
 
+    __table_args__ = (db.UniqueConstraint('usuario_id', 'reporte_id', name='uq_usuario_reporte'),)
+
     def to_dict(self):
         return {
             'id':self.id,
             'usuario_id': self.usuario_id,
             'reporte_id': self.reporte_id,
-            'fecha_creacion': self.fecha_creacion.isoformat() if self.fecha_creacion else None
+            'fecha_creacion': self.fecha_creacion.isoformat() if self.fecha_creacion else None,
+            'tipo': self.tipo
         }
 
 class Categoria(db.Model):

@@ -154,12 +154,112 @@ def handle_reportes():
     # --- LÓGICA PARA OBTENER TODOS LOS REPORTES ---
     else: # request.method == 'GET'
         try:
+            current_user_id = request.args.get('user_id', default=None, type=int)
             reportes = Reporte.query.all()
             # Convertimos cada objeto reporte a un diccionario
-            return jsonify([reporte.to_dict() for reporte in reportes]), 200
+            return jsonify([reporte.to_dict(current_user_id=current_user_id) for reporte in reportes]), 200
         except Exception as e:
             print(f"Error al consultar reportes: {e}")
             return jsonify({'message': 'Error al obtener los reportes.'}), 500
+        
+
+#Likes y Dislikes
+@main.route('/reportes/<int:reporte_id>/reaccion', methods=['POST'])
+def set_reaccion(reporte_id):
+    """Adds or updates a user's reaction (like/dislike) to a report."""
+    data = request.get_json()
+    if not data or 'usuario_id' not in data or 'tipo' not in data:
+        return jsonify({'message': 'Faltan datos (usuario_id, tipo)'}), 400
+    
+    usuario_id = data['usuario_id']
+    tipo_reaccion = data['tipo'].lower() # 'like' or 'dislike'
+
+    if tipo_reaccion not in ['like', 'dislike']:
+         return jsonify({'message': "Tipo de reacción inválido (debe ser 'like' o 'dislike')"}), 400
+
+    # Verify report and user exist
+    reporte = Reporte.query.get(reporte_id)
+    if not reporte: return jsonify({'message': 'Reporte no encontrado'}), 404
+    usuario = Usuario.query.get(usuario_id)
+    if not usuario: return jsonify({'message': 'Usuario no encontrado'}), 404
+
+    # Check existing reaction
+    existing_reaccion = Apoyo.query.filter_by(usuario_id=usuario_id, reporte_id=reporte_id).first()
+
+    try:
+        if existing_reaccion:
+            if existing_reaccion.tipo == tipo_reaccion:
+                return jsonify({'message': f'El usuario ya reaccionó con {tipo_reaccion}'}), 200 # No change
+            else:
+                existing_reaccion.tipo = tipo_reaccion
+                db.session.commit()
+                return jsonify({'message': f'Reacción actualizada a {tipo_reaccion}'}), 200
+        else:
+            nueva_reaccion = Apoyo(usuario_id=usuario_id, reporte_id=reporte_id, tipo=tipo_reaccion)
+            db.session.add(nueva_reaccion)
+            db.session.commit()
+            return jsonify({'message': f'Reacción ({tipo_reaccion}) agregada'}), 201
+
+    except IntegrityError: 
+         db.session.rollback()
+         return jsonify({'message': 'Error de concurrencia al reaccionar'}), 409
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error al establecer reacción: {e}")
+        return jsonify({'message': 'Error interno al establecer reacción'}), 500
+
+@main.route('/reportes/<int:reporte_id>/reaccion', methods=['DELETE'])
+def remove_reaccion(reporte_id):
+    data = request.get_json()
+    if not data or 'usuario_id' not in data:
+        return jsonify({'message': 'Falta el ID del usuario (usuario_id)'}), 400
+
+    usuario_id = data['usuario_id']
+
+    reaccion = Apoyo.query.filter_by(usuario_id=usuario_id, reporte_id=reporte_id).first()
+    if not reaccion: return jsonify({'message': 'El usuario no ha reaccionado a este reporte'}), 404
+
+    try:
+        db.session.delete(reaccion)
+        db.session.commit()
+        return jsonify({'message': 'Reacción eliminada exitosamente'}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error al eliminar reacción: {e}")
+        return jsonify({'message': 'Error interno al eliminar reacción'}), 500
+
+
+@main.route('/usuarios/<int:user_id>/apoyos', methods=['GET'])
+def get_user_apoyos(user_id):
+    user = Usuario.query.get(user_id)
+    if not user: return jsonify({'message': 'Usuario no encontrado'}), 404
+
+    try:
+        supported_reports = db.session.query(Reporte).join(Apoyo).filter(
+            Apoyo.usuario_id == user_id,
+            Apoyo.tipo == 'like' 
+        ).all()
+        report_list = [report.to_dict(current_user_id=user_id) for report in supported_reports]
+        return jsonify(report_list), 200
+    except Exception as e:
+        print(f"Error fetching user apoyos: {e}")
+        return jsonify({'message': 'Error interno al obtener los apoyos del usuario'}), 500
+
+@main.route('/usuarios/<int:user_id>/denuncias', methods=['GET'])
+def get_user_denuncias(user_id):
+    user = Usuario.query.get(user_id)
+    if not user: return jsonify({'message': 'Usuario no encontrado'}), 404
+
+    try:
+        disliked_reports = db.session.query(Reporte).join(Apoyo).filter(
+            Apoyo.usuario_id == user_id,
+            Apoyo.tipo == 'dislike'  
+        ).all()
+        report_list = [report.to_dict(current_user_id=user_id) for report in disliked_reports]
+        return jsonify(report_list), 200
+    except Exception as e:
+        print(f"Error fetching user denuncias: {e}")
+        return jsonify({'message': 'Error interno al obtener las denuncias del usuario'}), 500
 
 #Imagenes de Perfiles
 
