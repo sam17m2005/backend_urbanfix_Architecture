@@ -301,7 +301,7 @@ def get_user_apoyos(user_id):
         print(f"Error fetching user apoyos: {e}")
         return jsonify({'message': 'Error interno al obtener los apoyos del usuario'}), 500
 
-@main.route('/usuarios/<int:user_id>/denuncias', methods=['GET'])
+@main.route('/usuarios/<int:user_id>/denuncias', methods=['GET']) #esto esta para los apoyos 
 def get_user_denuncias(user_id):
     user = Usuario.query.get(user_id)
     if not user: return jsonify({'message': 'Usuario no encontrado'}), 404
@@ -476,7 +476,15 @@ def get_mis_reportes():
     
 
 @main.route('/reportes/<int:reporte_id>', methods=['GET','DELETE'])
-def delete_reporte(reporte_id):
+def reportes(reporte_id):
+    reporte = Reporte.query.get_or_404(reporte_id)
+    
+    # --- LA CORRECCIÓN ESTÁ AQUÍ ---
+    # Lee 'user_id' desde los argumentos de la URL (ej. ?user_id=123)
+    user_id = request.args.get('user_id', type=int) 
+    # Lee 'User-Role' desde los headers (como ya lo tenías)
+    user_role = request.headers.get('User-Role', 'usuario')
+
     if request.method == 'DELETE':
         try:
             reporte_a_eliminar = Reporte.query.get(reporte_id)
@@ -496,6 +504,19 @@ def delete_reporte(reporte_id):
             db.session.rollback()
             print(f"Error en DELETE /reportes/<id>: {e}")
             return jsonify({'error': 'Ocurrió un error en el servidor.'}), 500
+    else:
+        try:
+            reporte_data = reporte.to_dict(
+                current_user_id=user_id, 
+                current_user_role=user_role
+            )
+            return jsonify(reporte_data), 200
+        
+        except Exception as e:
+            print(f"Error al serializar el reporte {reporte_id}: {e}")
+            return jsonify({"error": "Error interno al procesar el reporte"}), 500
+
+            
 
 
 @main.route('/categorias', methods=['GET'])
@@ -647,3 +668,51 @@ def delete_funcionario(funcionario_id):
     db.session.delete(funcionario)
     db.session.commit()
     return jsonify({'message': 'Funcionario eliminado exitosamente'}), 200
+
+#Comentarios handling 
+@main.route('/reportes/<int:reporte_id>/comentarios', methods=['GET'])
+def get_comentarios(reporte_id):
+    comentarios = Comentario.query.filter_by(reporte_id=reporte_id).order_by(Comentario.fecha_creacion.desc()).all()
+    return jsonify([c.to_dict() for c in comentarios]), 200
+
+@main.route('/reportes/<int:reporte_id>/comentarios', methods=['POST'])
+def post_comentario(reporte_id):
+    data = request.get_json()
+    
+    # JWT TOKEN REALMENTE NO TENEMOS ASI QUE
+    # Por ahora, lo pasamos desde la app
+    usuario_id = data.get('usuario_id')
+    if not usuario_id:
+        return jsonify({"error": "usuario_id es requerido"}), 400
+
+    try:
+        nuevo_comentario = Comentario(
+            texto=data['texto'],
+            reporte_id=reporte_id,
+            usuario_id=usuario_id
+        )
+        db.session.add(nuevo_comentario)
+        db.session.commit()
+        return jsonify(nuevo_comentario.to_dict()), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@main.route('/comentarios/<int:comentario_id>', methods=['PUT'])
+def update_comentario(comentario_id):
+    comentario = Comentario.query.get_or_404(comentario_id)
+    # TODO: Añadir lógica de permisos (solo el autor puede editar)
+    
+    data = request.get_json()
+    comentario.texto = data.get('texto', comentario.texto)
+    db.session.commit()
+    return jsonify(comentario.to_dict()), 200
+
+@main.route('/comentarios/<int:comentario_id>', methods=['DELETE'])
+def delete_comentario(comentario_id):
+    comentario = Comentario.query.get_or_404(comentario_id)
+    # TODO: Añadir lógica de permisos (solo el autor puede eliminar) XD MAÑANA MIRAMO
+
+    db.session.delete(comentario)
+    db.session.commit()
+    return jsonify({"message": "Comentario eliminado"}), 200

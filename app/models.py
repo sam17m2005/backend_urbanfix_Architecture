@@ -89,6 +89,10 @@ class Reporte(db.Model):
         
         nombre_reporte = self.tipo_evento
 
+        creador = Usuario.query.get(self.usuario_creador_id)
+        creador_nombre = creador.nombre if creador else "Usuario Anón."
+        creador_iniciales = (creador.nombre[0] if creador and creador.nombre else 'U').upper()
+
         return {
             'id': self.id,
             'descripcion': self.descripcion,
@@ -107,7 +111,9 @@ class Reporte(db.Model):
             'current_user_reaction': current_user_reaction,
             'estado': self.estado,
             'categoria_nombre': categoria_nombre,
-            'nombre': nombre_reporte 
+            'nombre': nombre_reporte,
+            'creador_nombre': creador_nombre, # ts
+            'creador_iniciales': creador_iniciales # ts
         }
 
 
@@ -123,12 +129,25 @@ class Comentario(db.Model):
     reporte_id = db.Column(db.Integer, db.ForeignKey('reportes.id'),nullable=False)
     
     def to_dict(self):
+        # Buscamos al autor en la tabla de Usuarios
+        usuario = Usuario.query.get(self.usuario_id)
+        
+        # Revisamos si el autor es un funcionario (para la insignia de verificado)
+        # Asumiendo que Funcionario hereda o tiene el mismo id que Usuario
+        # Ajusta esta lógica si es diferente
+        es_verificado = Funcionario.query.filter_by(id=self.usuario_id).first() is not None
+
         return {
             'id': self.id,
             'reporte_id': self.reporte_id,
             'usuario_id': self.usuario_id,
             'texto': self.texto,
-            'fecha_creacion': self.fecha_creacion.isoformat()
+            'fecha_creacion': self.fecha_creacion.isoformat(),
+            
+            # --- NUEVOS CAMPOS ---
+            'autor_nombre': usuario.nombre if usuario else "Usuario Anónimo",
+            'autor_iniciales': (usuario.nombre[0] if usuario and usuario.nombre else 'U').upper(),
+            'es_verificado': es_verificado
         }
 
 
@@ -235,7 +254,7 @@ class Zona(db.Model):
         }
 
 class Apoyo(db.Model):
-    __tablename__ = 'apoyos'
+    __tablename__ = 'apoyos' #wtf
 
     id = db.Column(db.Integer, primary_key=True)
     fecha_creacion = db.Column(db.TIMESTAMP, server_default=db.func.now())
