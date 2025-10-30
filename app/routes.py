@@ -291,7 +291,7 @@ def get_user_apoyos(user_id):
             Apoyo.tipo == 'like'
         ).all()
         
-        report_list = [report[0].to_dict(
+        report_list = [report.to_dict(
             current_user_id=user_id, 
             current_user_role='usuario'
         ) for report in supported_reports]
@@ -312,7 +312,7 @@ def get_user_denuncias(user_id):
             Apoyo.tipo == 'dislike'
         ).all()
 
-        report_list = [report[0].to_dict(
+        report_list = [report.to_dict(
             current_user_id=user_id, 
             current_user_role='usuario'
         ) for report in disliked_reports]
@@ -333,7 +333,7 @@ def get_funcionario_apoyos(func_id):
             Apoyo.tipo == 'like'
         ).all()
         
-        report_list = [report[0].to_dict(
+        report_list = [report.to_dict(
             current_user_id=func_id, 
             current_user_role='funcionario'
         ) for report in supported_reports]
@@ -354,7 +354,7 @@ def get_funcionario_denuncias(func_id):
             Apoyo.tipo == 'dislike'
         ).all()
 
-        report_list = [report[0].to_dict(
+        report_list = [report.to_dict(
             current_user_id=func_id, 
             current_user_role='funcionario'
         ) for report in disliked_reports]

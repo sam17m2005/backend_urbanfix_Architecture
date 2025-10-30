@@ -56,7 +56,7 @@ class Reporte(db.Model):
     funcionario_asignado_id = db.Column(db.Integer, db.ForeignKey('funcionarios.id'), nullable=True) 
 
     # CÓDIGO CORREGIDO
-    def to_dict(self, current_user_id=None):
+    def to_dict(self, current_user_id=None, current_user_role=None):
         
         apoyo_count = db.session.query(func.count(Apoyo.id)).filter(
             Apoyo.reporte_id == self.id,
