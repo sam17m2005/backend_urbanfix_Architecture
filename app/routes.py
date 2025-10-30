@@ -166,36 +166,72 @@ def handle_reportes():
 #Likes y Dislikes
 @main.route('/reportes/<int:reporte_id>/reaccion', methods=['POST'])
 def set_reaccion(reporte_id):
-    """Adds or updates a user's reaction (like/dislike) to a report."""
+    """
+    Añade o actualiza la reacción (like/dislike) de un actor
+    (ya sea 'usuario' o 'funcionario').
+    """
     data = request.get_json()
-    if not data or 'usuario_id' not in data or 'tipo' not in data:
-        return jsonify({'message': 'Faltan datos (usuario_id, tipo)'}), 400
+
+    # ▼▼▼ CAMBIO: Espera 'actor_id' y 'role' en lugar de 'usuario_id' ▼▼▼
+    if not data or 'actor_id' not in data or 'role' not in data or 'tipo' not in data:
+        return jsonify({'message': 'Faltan datos (actor_id, role, tipo)'}), 400
     
-    usuario_id = data['usuario_id']
-    tipo_reaccion = data['tipo'].lower() # 'like' or 'dislike'
+    actor_id = data['actor_id']
+    actor_role = data['role']
+    tipo_reaccion = data['tipo'].lower()
+    # ▲▲▲ FIN DE CAMBIO ▲▲▲
 
     if tipo_reaccion not in ['like', 'dislike']:
          return jsonify({'message': "Tipo de reacción inválido (debe ser 'like' o 'dislike')"}), 400
 
-    # Verify report and user exist
+    # Verificar que el reporte exista
     reporte = Reporte.query.get(reporte_id)
     if not reporte: return jsonify({'message': 'Reporte no encontrado'}), 404
-    usuario = Usuario.query.get(usuario_id)
-    if not usuario: return jsonify({'message': 'Usuario no encontrado'}), 404
 
-    # Check existing reaction
-    existing_reaccion = Apoyo.query.filter_by(usuario_id=usuario_id, reporte_id=reporte_id).first()
+    # ▼▼▼ CAMBIO: Validar que el actor (usuario o funcionario) exista ▼▼▼
+    actor = None
+    if actor_role == 'usuario':
+        actor = Usuario.query.get(actor_id)
+    elif actor_role == 'funcionario':
+        actor = Funcionario.query.get(actor_id)
+    else:
+        return jsonify({'message': "Rol inválido (debe ser 'usuario' o 'funcionario')"}), 400
+    
+    if not actor: return jsonify({'message': 'Actor (usuario/funcionario) no encontrado'}), 404
+    # ▲▲▲ FIN DE CAMBIO ▲▲▲
+
+    # ▼▼▼ CAMBIO: Buscar la reacción existente basado en el ROL ▼▼▼
+    existing_reaccion = None
+    query = Apoyo.query.filter_by(reporte_id=reporte_id)
+    if actor_role == 'usuario':
+        existing_reaccion = query.filter_by(usuario_id=actor_id).first()
+    else: # actor_role == 'funcionario'
+        existing_reaccion = query.filter_by(funcionario_id=actor_id).first()
+    # ▲▲▲ FIN DE CAMBIO ▲▲▲
 
     try:
         if existing_reaccion:
-            if existing_reaccion.tipo == tipo_reaccion:
-                return jsonify({'message': f'El usuario ya reaccionó con {tipo_reaccion}'}), 200 # No change
-            else:
-                existing_reaccion.tipo = tipo_reaccion
-                db.session.commit()
-                return jsonify({'message': f'Reacción actualizada a {tipo_reaccion}'}), 200
+            # Si ya existe, solo actualiza el tipo
+            existing_reaccion.tipo = tipo_reaccion
+            db.session.commit()
+            return jsonify({'message': f'Reacción actualizada a {tipo_reaccion}'}), 200
         else:
-            nueva_reaccion = Apoyo(usuario_id=usuario_id, reporte_id=reporte_id, tipo=tipo_reaccion)
+            # ▼▼▼ CAMBIO: Crear la nueva reacción basado en el ROL ▼▼▼
+            nueva_reaccion = None
+            if actor_role == 'usuario':
+                nueva_reaccion = Apoyo(
+                    usuario_id=actor_id, 
+                    reporte_id=reporte_id, 
+                    tipo=tipo_reaccion
+                )
+            else: # actor_role == 'funcionario'
+                nueva_reaccion = Apoyo(
+                    funcionario_id=actor_id, 
+                    reporte_id=reporte_id, 
+                    tipo=tipo_reaccion
+                )
+            # ▲▲▲ FIN DE CAMBIO ▲▲▲
+            
             db.session.add(nueva_reaccion)
             db.session.commit()
             return jsonify({'message': f'Reacción ({tipo_reaccion}) agregada'}), 201
@@ -211,13 +247,27 @@ def set_reaccion(reporte_id):
 @main.route('/reportes/<int:reporte_id>/reaccion', methods=['DELETE'])
 def remove_reaccion(reporte_id):
     data = request.get_json()
-    if not data or 'usuario_id' not in data:
-        return jsonify({'message': 'Falta el ID del usuario (usuario_id)'}), 400
 
-    usuario_id = data['usuario_id']
+    # ▼▼▼ CAMBIO: Espera 'actor_id' y 'role' ▼▼▼
+    if not data or 'actor_id' not in data or 'role' not in data:
+        return jsonify({'message': 'Falta el ID del actor (actor_id) o el rol (role)'}), 400
 
-    reaccion = Apoyo.query.filter_by(usuario_id=usuario_id, reporte_id=reporte_id).first()
-    if not reaccion: return jsonify({'message': 'El usuario no ha reaccionado a este reporte'}), 404
+    actor_id = data['actor_id']
+    actor_role = data['role']
+    # ▲▲▲ FIN DE CAMBIO ▲▲▲
+
+    # ▼▼▼ CAMBIO: Buscar la reacción existente basado en el ROL ▼▼▼
+    reaccion = None
+    query = Apoyo.query.filter_by(reporte_id=reporte_id)
+    if actor_role == 'usuario':
+        reaccion = query.filter_by(usuario_id=actor_id).first()
+    elif actor_role == 'funcionario':
+        reaccion = query.filter_by(funcionario_id=actor_id).first()
+    else:
+        return jsonify({'message': "Rol inválido"}), 400
+    # ▲▲▲ FIN DE CAMBIO ▲▲▲
+
+    if not reaccion: return jsonify({'message': 'El actor no ha reaccionado a este reporte'}), 404
 
     try:
         db.session.delete(reaccion)
@@ -228,6 +278,7 @@ def remove_reaccion(reporte_id):
         print(f"Error al eliminar reacción: {e}")
         return jsonify({'message': 'Error interno al eliminar reacción'}), 500
 
+# --- RUTAS DE LISTAS DE USUARIO ---
 
 @main.route('/usuarios/<int:user_id>/apoyos', methods=['GET'])
 def get_user_apoyos(user_id):
@@ -237,9 +288,14 @@ def get_user_apoyos(user_id):
     try:
         supported_reports = db.session.query(Reporte).join(Apoyo).filter(
             Apoyo.usuario_id == user_id,
-            Apoyo.tipo == 'like' 
+            Apoyo.tipo == 'like'
         ).all()
-        report_list = [report.to_dict(current_user_id=user_id) for report in supported_reports]
+        
+        report_list = [report[0].to_dict(
+            current_user_id=user_id, 
+            current_user_role='usuario'
+        ) for report in supported_reports]
+        
         return jsonify(report_list), 200
     except Exception as e:
         print(f"Error fetching user apoyos: {e}")
@@ -253,14 +309,61 @@ def get_user_denuncias(user_id):
     try:
         disliked_reports = db.session.query(Reporte).join(Apoyo).filter(
             Apoyo.usuario_id == user_id,
-            Apoyo.tipo == 'dislike'  
+            Apoyo.tipo == 'dislike'
         ).all()
-        report_list = [report.to_dict(current_user_id=user_id) for report in disliked_reports]
+
+        report_list = [report[0].to_dict(
+            current_user_id=user_id, 
+            current_user_role='usuario'
+        ) for report in disliked_reports]
+
         return jsonify(report_list), 200
     except Exception as e:
         print(f"Error fetching user denuncias: {e}")
         return jsonify({'message': 'Error interno al obtener las denuncias del usuario'}), 500
 
+@main.route('/funcionarios/<int:func_id>/apoyos', methods=['GET'])
+def get_funcionario_apoyos(func_id):
+    funcionario = Funcionario.query.get(func_id)
+    if not funcionario: return jsonify({'message': 'Funcionario no encontrado'}), 404
+
+    try:
+        supported_reports = db.session.query(Reporte).join(Apoyo).filter(
+            Apoyo.funcionario_id == func_id,
+            Apoyo.tipo == 'like'
+        ).all()
+        
+        report_list = [report[0].to_dict(
+            current_user_id=func_id, 
+            current_user_role='funcionario'
+        ) for report in supported_reports]
+        
+        return jsonify(report_list), 200
+    except Exception as e:
+        print(f"Error fetching funcionario apoyos: {e}")
+        return jsonify({'message': 'Error interno al obtener los apoyos del funcionario'}), 500
+
+@main.route('/funcionarios/<int:func_id>/denuncias', methods=['GET'])
+def get_funcionario_denuncias(func_id):
+    funcionario = Funcionario.query.get(func_id)
+    if not funcionario: return jsonify({'message': 'Funcionario no encontrado'}), 404
+
+    try:
+        disliked_reports = db.session.query(Reporte).join(Apoyo).filter(
+            Apoyo.funcionario_id == func_id,
+            Apoyo.tipo == 'dislike'
+        ).all()
+
+        report_list = [report[0].to_dict(
+            current_user_id=func_id, 
+            current_user_role='funcionario'
+        ) for report in disliked_reports]
+
+        return jsonify(report_list), 200
+    except Exception as e:
+        print(f"Error fetching funcionario denuncias: {e}")
+        return jsonify({'message': 'Error interno al obtener las denuncias del funcionario'}), 500
+    
 #Imagenes de Perfiles
 
 @main.route('/usuarios/<int:user_id>/foto_perfil', methods=['POST'])

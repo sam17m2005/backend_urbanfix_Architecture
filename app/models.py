@@ -69,11 +69,18 @@ class Reporte(db.Model):
         ).scalar() or 0
 
         current_user_reaction = None
-        if current_user_id:
-            reaction = db.session.query(Apoyo.tipo).filter(
-                Apoyo.reporte_id == self.id,
-                Apoyo.usuario_id == current_user_id
-            ).scalar()
+        if current_user_id and current_user_role:
+            # Empezar la consulta
+            query = db.session.query(Apoyo.tipo).filter(Apoyo.reporte_id == self.id)
+            
+            # Filtrar por el rol correcto
+            if current_user_role == 'usuario':
+                query = query.filter(Apoyo.usuario_id == current_user_id)
+            elif current_user_role == 'funcionario':
+                query = query.filter(Apoyo.funcionario_id == current_user_id)
+            
+            # Obtener el resultado
+            reaction = query.scalar()
             current_user_reaction = reaction
             
      
@@ -236,10 +243,14 @@ class Apoyo(db.Model):
 
     #Relaciones
 
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'),nullable=False)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'),nullable=True)
+    funcionario_id = db.Column(db.Integer, db.ForeignKey('funcionarios.id'), nullable=True)
     reporte_id = db.Column(db.Integer, db.ForeignKey('reportes.id'),nullable=False)
 
-    __table_args__ = (db.UniqueConstraint('usuario_id', 'reporte_id', name='uq_usuario_reporte'),)
+    __table_args__ = (
+        db.UniqueConstraint('usuario_id', 'reporte_id', name='uq_usuario_reporte'),
+        db.UniqueConstraint('funcionario_id', 'reporte_id', name='uq_funcionario_reporte')
+    )
 
     def to_dict(self):
         return {
