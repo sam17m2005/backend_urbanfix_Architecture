@@ -358,11 +358,11 @@ def get_mis_reportes():
             resultado_formateado.append({
                 "id": reporte.id,
                 "nombre": reporte.tipo_evento,
-                "imagen_prueba_1": reporte.img_prueba_1,
+                "img_prueba_1": reporte.img_prueba_1,
                 "fecha_creacion": reporte.fecha_creacion.isoformat() if reporte.fecha_creacion else None,
                 "direccion": reporte.direccion,
                 "estado": reporte.estado,
-                "categoria_nombre": categoria.nombre  # <-- ¡CAMPO AÑADIDO!
+                "categoria_nombre": categoria.nombre 
             })
 
         return jsonify(resultado_formateado), 200
@@ -381,12 +381,8 @@ def delete_reporte(reporte_id):
             if reporte_a_eliminar is None:
                 return jsonify({'error': 'Reporte no encontrado.'}), 404
 
-            # ▼▼▼ LÓGICA DE NEGOCIO AÑADIDA ▼▼▼
-            # Comprueba si el estado NO es uno de los permitidos para borrado
             if reporte_a_eliminar.estado not in ['Nuevo', 'Resuelto']:
-                    # 403 Forbidden: Entendimos la petición, pero nos rehusamos a cumplirla.
                 return jsonify({'error': 'No se puede eliminar un reporte que está en proceso.'}), 403
-            # ▲▲▲ FIN DE LA LÓGICA ▲▲▲
 
             db.session.delete(reporte_a_eliminar)
             db.session.commit()

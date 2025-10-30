@@ -76,15 +76,11 @@ class Reporte(db.Model):
             ).scalar()
             current_user_reaction = reaction
             
-        # ▼▼▼ LÍNEAS AÑADIDAS ▼▼▼
-        # 1. Busca la categoría para obtener su nombre
+     
         categoria = Categoria.query.get(self.categoria_id)
         categoria_nombre = categoria.nombre if categoria else None
         
-        # 2. (Opcional) El campo 'nombre' que faltaba en el Problema 1
-        #    viene de 'tipo_evento'
         nombre_reporte = self.tipo_evento
-        # ▲▲▲ FIN DE LÍNEAS AÑADIDAS ▲▲▲
 
         return {
             'id': self.id,
@@ -102,12 +98,9 @@ class Reporte(db.Model):
             'apoyos_count': apoyo_count,
             'desapoyos_count': desapoyo_count,
             'current_user_reaction': current_user_reaction,
-            
-            # ▼▼▼ CAMPOS AÑADIDOS ▼▼▼
             'estado': self.estado,
             'categoria_nombre': categoria_nombre,
             'nombre': nombre_reporte 
-            # ▲▲▲ FIN DE CAMPOS AÑADIDOS ▲▲▲
         }
 
 
