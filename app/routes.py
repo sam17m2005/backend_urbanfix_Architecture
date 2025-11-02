@@ -716,3 +716,60 @@ def delete_comentario(comentario_id):
     db.session.delete(comentario)
     db.session.commit()
     return jsonify({"message": "Comentario eliminado"}), 200
+
+# Al final del archivo routes.py, antes del último comentario o al final
+
+@main.route('/usuarios/<int:user_id>/perfil', methods=['GET'])
+def get_usuario_perfil(user_id):
+    """
+    Obtiene el perfil público de un usuario.
+    """
+    try:
+        usuario = Usuario.query.get(user_id)
+        
+        if not usuario:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+        
+        return jsonify({
+            "id": usuario.id,
+            "nombre": usuario.nombre,
+            "email": usuario.email,
+            "role": "usuario",
+            "fecha_registro": usuario.fecha_registro.isoformat() if usuario.fecha_registro else None,
+            "entidad_nombre": None  # Los usuarios no tienen entidad
+        }), 200
+        
+    except Exception as e:
+        print(f"Error al obtener perfil de usuario: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@main.route('/funcionarios/<int:funcionario_id>/perfil', methods=['GET'])
+def get_funcionario_perfil(funcionario_id):
+    """
+    Obtiene el perfil público de un funcionario.
+    """
+    try:
+        funcionario = Funcionario.query.get(funcionario_id)
+        
+        if not funcionario:
+            return jsonify({"error": "Funcionario no encontrado"}), 404
+        
+        # Obtener el nombre de la entidad si existe
+        entidad_nombre = None
+        if funcionario.entidad_id:
+            entidad = EntidadPublica.query.get(funcionario.entidad_id)
+            entidad_nombre = entidad.nombre if entidad else None
+        
+        return jsonify({
+            "id": funcionario.id,
+            "nombre": funcionario.nombre,
+            "email": funcionario.email,
+            "role": "funcionario",
+            "fecha_registro": funcionario.fecha_registro.isoformat() if funcionario.fecha_registro else None,
+            "entidad_nombre": entidad_nombre
+        }), 200
+        
+    except Exception as e:
+        print(f"Error al obtener perfil de funcionario: {e}")
+        return jsonify({"error": str(e)}), 500
