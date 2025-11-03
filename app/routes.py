@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from sqlalchemy.exc import IntegrityError
-from .models import Usuario, Reporte, Comentario, HistorialEstado, Funcionario, EstadoReporte, EntidadPublica, Zona, Apoyo, Categoria
+from .models import Usuario, Reporte, Comentario, Funcionario, EstadoReporte, EntidadPublica, Zona, Apoyo, Categoria
 from .utils import upload_base64_to_s3, upload_profile_pic_to_s3
 from . import db
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -701,7 +701,7 @@ def post_comentario(reporte_id):
 @main.route('/comentarios/<int:comentario_id>', methods=['PUT'])
 def update_comentario(comentario_id):
     comentario = Comentario.query.get_or_404(comentario_id)
-    # TODO: Añadir lógica de permisos (solo el autor puede editar)
+    # TODO: Añadir lógica de permisos (solo el autor puede editar) XD mañana miramo 
     
     data = request.get_json()
     comentario.texto = data.get('texto', comentario.texto)
@@ -717,7 +717,40 @@ def delete_comentario(comentario_id):
     db.session.commit()
     return jsonify({"message": "Comentario eliminado"}), 200
 
-# Al final del archivo routes.py, antes del último comentario o al final
+@main.route('/reportes/<int:reporte_id>/estado', methods=['PUT'])
+def update_reporte_estado(reporte_id):
+    ##Actualiza el estado de un reporte.
+    ##Solo accesible por un funcionario.
+
+    reporte = Reporte.query.get_or_404(reporte_id)
+    data = request.get_json()
+
+    #JWT token si guera real.
+    role = request.headers.get('User-Role')
+    user_id = request.headers.get('User-Id')
+
+    if role != 'funcionario':
+        return jsonify({"error": "No autorizado. Se requiere rol de funcionario."}), 403
+
+    nuevo_estado = data.get('estado')
+    if not nuevo_estado or nuevo_estado not in ['Nuevo', 'En proceso', 'Resuelto']:
+        return jsonify({"error": "Estado no válido. Debe ser 'Nuevo', 'En proceso' o 'Resuelto'"}), 400
+
+    try:
+        reporte.estado = nuevo_estado
+        
+        if not reporte.funcionario_asignado_id:
+            reporte.funcionario_asignado_id = user_id
+
+        db.session.commit()
+        
+        return jsonify(reporte.to_dict(current_user_id=user_id, current_user_role=role)), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error al actualizar estado: {e}")
+        return jsonify({"error": "Error interno al actualizar el estado"}), 500
+
 
 @main.route('/usuarios/<int:user_id>/perfil', methods=['GET'])
 def get_usuario_perfil(user_id):

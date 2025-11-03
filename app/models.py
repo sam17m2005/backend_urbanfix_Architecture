@@ -151,28 +151,6 @@ class Comentario(db.Model):
         }
 
 
-class HistorialEstado(db.Model):
-    __tablename__ = 'historial_estados'
-
-    id = db.Column(db.Integer, primary_key=True)
-    observaciones = db.Column(db.Text, nullable=True) 
-    fecha_cambio = db.Column(db.TIMESTAMP, server_default=db.func.now())
-
-    # --- Relaciones ---
-    reporte_id = db.Column(db.Integer, db.ForeignKey('reportes.id'), nullable=False)
-    estado_id = db.Column(db.Integer, db.ForeignKey('estados_reporte.id'), nullable=False) 
-    funcionario_id = db.Column(db.Integer, db.ForeignKey('funcionarios.id'), nullable=True)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'reporte_id': self.reporte_id,
-            'estado_id': self.estado_id,
-            'funcionario_id': self.funcionario_id,
-            'observaciones': self.observaciones,
-            'fecha_cambio': self.fecha_cambio.isoformat() if self.fecha_cambio else None
-        }
-
 class Funcionario(db.Model):
     __tablename__ = 'funcionarios'
 
