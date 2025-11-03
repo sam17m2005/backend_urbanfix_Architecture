@@ -806,3 +806,50 @@ def get_funcionario_perfil(funcionario_id):
     except Exception as e:
         print(f"Error al obtener perfil de funcionario: {e}")
         return jsonify({"error": str(e)}), 500
+    
+
+    ## Toda esta mierda es experimental 
+
+@main.route('/reportes/geojson', methods=['GET'])
+def get_reportes_geojson():
+    
+    ##Devuelve todos los reportes "Nuevos" o "En proceso" 
+    ##en formato GeoJSON FeatureCollection. <-Pesimo.
+    
+    try:
+        # Filtramos solo los reportes activos
+        reportes = Reporte.query.filter(Reporte.estado.in_(['Nuevo', 'En proceso'])).all()
+        
+        features = []
+        for reporte in reportes:
+            # Buscamos la categoría
+            categoria = Categoria.query.get(reporte.categoria_id)
+            categoria_nombre = categoria.nombre if categoria else "N/A"
+
+            # Construimos cada "Feature" (punto)
+            feature = {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    # Importante: GeoJSON usa [longitud, latitud]
+                    "coordinates": [float(reporte.longitud), float(reporte.latitud)] 
+                },
+                "properties": {
+                    "id": reporte.id, # <-- ¡La Clave para la navegación! . . . . . .. . . 
+                    "nombre": reporte.tipo_evento,
+                    "categoria": categoria_nombre
+                }
+            }
+            features.append(feature)
+        
+        # Envolvemos todo en una "FeatureCollection" holy fgdkjslagkdsa gkjldas esto es horrible
+        geojson_data = {
+            "type": "FeatureCollection",
+            "features": features
+        }
+        
+        return jsonify(geojson_data), 200
+
+    except Exception as e:
+        print(f"Error al generar GeoJSON: {e}")
+        return jsonify({"error": "Error interno al generar GeoJSON"}), 500
