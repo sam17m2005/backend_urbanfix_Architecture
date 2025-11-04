@@ -854,3 +854,7 @@ def get_reportes_geojson():
     except Exception as e:
         print(f"Error al generar GeoJSON: {e}")
         return jsonify({"error": "Error interno al generar GeoJSON"}), 500
+
+@main.route('/test-deploy')
+def test_deploy():
+    return "<h1>Funciona pe causa v2<h1>"
