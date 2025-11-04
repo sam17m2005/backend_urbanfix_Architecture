@@ -4,7 +4,7 @@ name: Deploy Backend to EC2
 on:
   push:
     branches:
-      - pruebas
+      - main
 
 jobs:
   deploy:
