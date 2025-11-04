@@ -818,7 +818,7 @@ def get_reportes_geojson():
     
     try:
         # Filtramos solo los reportes activos
-        reportes = Reporte.query.filter(Reporte.estado.in_(['Nuevo', 'En proceso'])).all()
+        reportes = Reporte.query.filter(Reporte.estado.in_(['Nuevo', 'En proceso', 'Resuelto'])).all()
         
         features = []
         for reporte in reportes:
@@ -837,7 +837,8 @@ def get_reportes_geojson():
                 "properties": {
                     "id": reporte.id, # <-- ¡La Clave para la navegación! . . . . . .. . . 
                     "nombre": reporte.tipo_evento,
-                    "categoria": categoria_nombre
+                    "categoria": categoria_nombre,
+                    "estado": reporte.estado
                 }
             }
             features.append(feature)
