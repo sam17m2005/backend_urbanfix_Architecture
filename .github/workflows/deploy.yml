@@ -1,0 +1,26 @@
+name: Deploy Backend to EC2
+
+# Rama
+on:
+  push:
+    branches:
+      - pruebas
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Deploy to EC2 Server
+      uses: appleboy/ssh-action@master
+      with:
+        # Secretos
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+        # Comandos
+        script: |
+          cd /home/ubuntu/backend_urbanfix
+          git pull
+          sudo systemctl restart urbanfix
