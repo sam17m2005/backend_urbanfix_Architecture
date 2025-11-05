@@ -4,6 +4,7 @@ from .models import Usuario, Reporte, Comentario, Funcionario, EstadoReporte, En
 from .utils import upload_base64_to_s3, upload_profile_pic_to_s3
 from . import db
 from werkzeug.security import generate_password_hash, check_password_hash
+from decimal import Decimal
 
 
 main = Blueprint('main', __name__)
@@ -387,7 +388,7 @@ def update_usuario_foto(user_id):
         return jsonify({'message': 'Error al procesar y subir la imagen de perfil'}), 500
 
     # --- Guarda la URL en el campo 'imagen' (como está en tu models.py) ---
-    usuario.imagen = img_url 
+    usuario.foto_perfil_url = img_url
     db.session.commit()
 
     return jsonify({
@@ -769,7 +770,8 @@ def get_usuario_perfil(user_id):
             "email": usuario.email,
             "role": "usuario",
             "fecha_registro": usuario.fecha_registro.isoformat() if usuario.fecha_registro else None,
-            "entidad_nombre": None  # Los usuarios no tienen entidad
+            "entidad_nombre": None,
+            "profile_pic_url": usuario.foto_perfil_url  # Los usuarios no tienen entidad
         }), 200
         
     except Exception as e:
@@ -800,7 +802,8 @@ def get_funcionario_perfil(funcionario_id):
             "email": funcionario.email,
             "role": "funcionario",
             "fecha_registro": funcionario.fecha_registro.isoformat() if funcionario.fecha_registro else None,
-            "entidad_nombre": entidad_nombre
+            "entidad_nombre": entidad_nombre,
+            "profile_pic_url": funcionario.foto_perfil_url 
         }), 200
         
     except Exception as e:
@@ -878,9 +881,9 @@ def update_reporte(reporte_id):
     if 'descripcion' in data:
         reporte.descripcion = data['descripcion']
     if 'latitud' in data:
-        reporte.latitud = data['latitud']
+        reporte.latitud = Decimal(data['latitud'])
     if 'longitud' in data:
-        reporte.longitud = data['longitud']
+        reporte.longitud = Decimal(data['longitud'])
     if 'direccion' in data:
         reporte.direccion = data['direccion']
 
