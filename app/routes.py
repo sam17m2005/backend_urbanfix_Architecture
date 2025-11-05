@@ -864,7 +864,6 @@ def test_deploy():
 # Endpoint Actualizar Reporte
 @main.route('/reportes/<int:reporte_id>', methods=['PUT'])
 def update_reporte(reporte_id):
-
     reporte = Reporte.query.get_or_404(reporte_id)
     data = request.get_json()
 
@@ -873,7 +872,7 @@ def update_reporte(reporte_id):
 
     if 'referencia' in data:
         reporte.referencia = data['referencia']
-    if 'tipo_evento' in data: 
+    if 'tipo_evento' in data:
         reporte.tipo_evento = data['tipo_evento']
     if 'descripcion' in data:
         reporte.descripcion = data['descripcion']
@@ -884,15 +883,23 @@ def update_reporte(reporte_id):
             if img_1_url:
                 reporte.img_prueba_1 = img_1_url
 
-        if 'img_prueba_2' in data:
-            if data['img_prueba_2']: 
+            if 'img_prueba_2' in data:
+                if data['img_prueba_2']: 
+                    img_2_url = upload_base64_to_s3(data['img_prueba_2'])
+                    reporte.img_prueba_2 = img_2_url
+                else: 
+                    reporte.img_prueba_2 = None
+
+        elif 'img_prueba_1' in data and not data['img_prueba_1']:
+            if 'img_prueba_2' in data and data['img_prueba_2']:
                 img_2_url = upload_base64_to_s3(data['img_prueba_2'])
-                reporte.img_prueba_2 = img_2_url
-            else: 
-                reporte.img_prueba_2 = None
+                if img_2_url:
+                    reporte.img_prueba_1 = img_2_url
+                    reporte.img_prueba_2 = None
+            else:
+                pass 
 
         db.session.commit()
-
         return jsonify(reporte.to_dict()), 200
 
     except Exception as e:
