@@ -1,6 +1,5 @@
 name: Deploy Backend to EC2
 
-# Rama
 on:
   push:
     branches:
@@ -11,16 +10,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Deploy to EC2 Server
-      uses: appleboy/ssh-action@master
-      with:
-        # Secretos
-        host: ${{ secrets.EC2_HOST }}
-        username: ${{ secrets.EC2_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Deploy to EC2 Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-        # Comandos
-        script: |
-          cd /home/ubuntu/backend_urbanfix
-          git pull
-          sudo systemctl restart urbanfix
+          script: |
+            cd /home/ubuntu/backend_urbanfix
+            echo ">>> Fetching latest changes..."
+            git fetch origin main
+            git reset --hard origin/main
+            echo ">>> Pull complete."
+
+            # Activar el entorno virtual y reinstalar dependencias (por si cambió algo)
+            source venv/bin/activate
+            pip install -r requirements.txt --upgrade
+
+            # Reiniciar el servicio systemd
+            echo ">>> Restarting Gunicorn service..."
+            sudo systemctl daemon-reload
+            sudo systemctl restart urbanfix.service
+
+            echo ">>> Deployment complete "
