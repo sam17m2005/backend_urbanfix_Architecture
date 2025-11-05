@@ -870,6 +870,7 @@ def update_reporte(reporte_id):
     if not data:
         return jsonify({'message': 'No se recibieron datos'}), 400
 
+    # Actualizar campos de texto siempre
     if 'referencia' in data:
         reporte.referencia = data['referencia']
     if 'tipo_evento' in data:
@@ -878,26 +879,22 @@ def update_reporte(reporte_id):
         reporte.descripcion = data['descripcion']
 
     try:
-        if 'img_prueba_1' in data and data['img_prueba_1']:
-            img_1_url = upload_base64_to_s3(data['img_prueba_1'])
-            if img_1_url:
-                reporte.img_prueba_1 = img_1_url
-
-            if 'img_prueba_2' in data:
-                if data['img_prueba_2']: 
-                    img_2_url = upload_base64_to_s3(data['img_prueba_2'])
-                    reporte.img_prueba_2 = img_2_url
-                else: 
-                    reporte.img_prueba_2 = None
-
-        elif 'img_prueba_1' in data and not data['img_prueba_1']:
-            if 'img_prueba_2' in data and data['img_prueba_2']:
-                img_2_url = upload_base64_to_s3(data['img_prueba_2'])
+        
+        if 'img_prueba_1' in data:
+            img_1_base64 = data['img_prueba_1']
+            if img_1_base64: 
+                img_1_url = upload_base64_to_s3(img_1_base64)
+                if img_1_url:
+                    reporte.img_prueba_1 = img_1_url
+        
+        if 'img_prueba_2' in data:
+            img_2_base64 = data['img_prueba_2']
+            if img_2_base64: 
+                img_2_url = upload_base64_to_s3(img_2_base64)
                 if img_2_url:
-                    reporte.img_prueba_1 = img_2_url
-                    reporte.img_prueba_2 = None
-            else:
-                pass 
+                    reporte.img_prueba_2 = img_2_url
+            else:  
+                reporte.img_prueba_2 = None
 
         db.session.commit()
         return jsonify(reporte.to_dict()), 200
