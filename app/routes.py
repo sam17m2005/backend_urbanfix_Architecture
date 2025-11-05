@@ -877,6 +877,12 @@ def update_reporte(reporte_id):
         reporte.tipo_evento = data['tipo_evento']
     if 'descripcion' in data:
         reporte.descripcion = data['descripcion']
+    if 'latitud' in data:
+        reporte.latitud = data['latitud']
+    if 'longitud' in data:
+        reporte.longitud = data['longitud']
+    if 'direccion' in data:
+        reporte.direccion = data['direccion']
 
     try:
         
