@@ -2,7 +2,7 @@
 
 Este es el repositorio del servidor backend para UrbanFix, una aplicación móvil diseñada para reportar daños o incidencias en el espacio público de manera rápida y eficiente.
 
-El objetivo de este backend es gestionar toda la lógica de negocio, autenticación de usuarios/funcionarios, creación de reportes, y el almacenamiento de datos (PostgreSQL) e imágenes (AWS S3). El servidor está construido en Python usando el framework Flask y sigue un patrón de fábrica (Factory Pattern).
+El objetivo de este backend es gestionar toda la lógica de negocio, autenticación de usuarios/funcionarios, creación de reportes, y el almacenamiento de datos (PostgreSQL) e imágenes (AWS S3). El servidor está construido en Python usando el framework Flask.
 
 ---
 
