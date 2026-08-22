@@ -322,3 +322,5 @@ al teclado. Si no corre a la primera, el `README.md` está incompleto.
 | ¿Qué riesgo permanece? | |
 
 *(Ver también el registro detallado de escenarios corregidos en §2.7.)*
+
+<!-- verificación de commit -->
