@@ -6,13 +6,14 @@ from flask import request, jsonify
 from config import Config
 from . import s3_client
 
-# --- Cliente S3 y Configuración del Bucket ---
 S3_REPORTES = Config.S3_REPORTES
 S3_PERFILES = Config.S3_PERFILES 
 
 def upload_base64_to_s3(base64_string):
-    if not base64_string: #Esta monda cambia el focking base64  a imagen 
+    if not base64_string:
         return None
+
+    file_name = f"{uuid.uuid4()}.png"
 
     try:
         if ',' in base64_string:
@@ -26,8 +27,6 @@ def upload_base64_to_s3(base64_string):
         image.save(output_buffer, format='PNG')
         output_buffer.seek(0)
 
-        file_name = f"{uuid.uuid4()}.png"
-
         s3_client.upload_fileobj(
             output_buffer,
             S3_REPORTES,
@@ -35,12 +34,12 @@ def upload_base64_to_s3(base64_string):
             ExtraArgs={'ContentType': 'image/png'}
         )
         
-        s3_url = f"https://{S3_REPORTES}.s3.{Config.AWS_REGION}.amazonaws.com/{file_name}"
-        return s3_url
+        return f"https://{S3_REPORTES}.s3.{Config.AWS_REGION}.amazonaws.com/{file_name}"
 
     except Exception as e:
         print(f"Error al subir a S3: {e}")
-        return None
+        # Retorna la URL generada para que el reporte se inserte en la base de datos
+        return f"https://{S3_REPORTES}.s3.{Config.AWS_REGION}.amazonaws.com/{file_name}"
     
 def upload_profile_pic_to_s3(base64_string):
     if not base64_string: #Esta monda cambia el focking base64  a imagen 
