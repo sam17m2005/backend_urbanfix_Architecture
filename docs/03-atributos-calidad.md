@@ -124,10 +124,10 @@ parte del trabajo de adopción del sistema base.
 
 | # | Inconsistencia | Dónde aparece | Resolución |
 |---|---|---|---|
-| 1 | Docker: el análisis PASS MADE original lo lista como recomendación; los documentos 01 y 02 lo dan por implementado | `UrbanFix - Arquitectura.docx` §10 frente a `01` §3.3 y `02` §2.1 | |
-| 2 | Modo offline: `01` §4.3 lo descarta como riesgo; `02` §2.1 lo recomienda como mejora de disponibilidad | `01` §4.3 frente a `02` §2.1 | |
-| 3 | Ubicación de PostgreSQL: "gestionado en Neon" frente a "alojado en AWS" | `UrbanFix - Arquitectura.docx` §9 | |
-| 4 | `contentDescription`: originalmente "no confirmado"; en `02` §2.1 se afirma como estado actual | `UrbanFix - Arquitectura.docx` §10 frente a `02` §2.1 | |
+| 1 | Docker: el análisis PASS MADE original lo lista como recomendación; los documentos 01 y 02 lo dan por implementado | `UrbanFix - Arquitectura.docx` §10 frente a `01` §3.3 y `02` §2.1 | Docker **ya está implementado**, siguiendo las indicaciones de desarrollo y la recomendación planteada inicialmente por la IA. La recomendación del diagnóstico original fue adoptada por el equipo entre la evaluación inicial y la documentación final, por lo que `01` y `02` reflejan correctamente el estado actual del sistema. |
+| 2 | Modo offline: `01` §4.3 lo descarta como riesgo; `02` §2.1 lo recomienda como mejora de disponibilidad | `01` §4.3 frente a `02` §2.1 | El modo offline se descartó explícitamente como riesgo del alcance actual (§4.3), ya que no responde a la lógica de negocio del sistema. La mención en `02` §2.1 se mantiene como una **oportunidad futura de disponibilidad**, no como un requisito del alcance vigente: se deja registrada para una eventual evolución del sistema, pero no se considera pendiente ni riesgo dentro del proyecto actual. |
+| 3 | Ubicación de PostgreSQL: "gestionado en Neon" frente a "alojado en AWS" | `UrbanFix - Arquitectura.docx` §9 | No es una inconsistencia real, sino una imprecisión de redacción del documento original. **Neon es el proveedor que aloja la base de datos** (PostgreSQL como servicio gestionado), mientras que la **instancia de AWS EC2 aloja la aplicación en general** (backend Flask/Gunicorn). Son dos componentes de infraestructura distintos y complementarios, no una contradicción. |
+| 4 | `contentDescription`: originalmente "no confirmado"; en `02` §2.1 se afirma como estado actual | `UrbanFix - Arquitectura.docx` §10 frente a `02` §2.1 | El uso de `contentDescription` **no se había confirmado en el diagnóstico inicial** revisado por la IA, por falta de visibilidad sobre el código fuente del frontend en ese momento. Sin embargo, siempre formó parte del desarrollo del frontend como parte del atributo de accesibilidad. `02` §2.1 refleja el estado real una vez verificado con el equipo, no un cambio de comportamiento del sistema. |
 
 ---
 
@@ -135,12 +135,10 @@ parte del trabajo de adopción del sistema base.
 
 | Pregunta | Respuesta |
 |---|---|
-| ¿Qué herramienta se usó? | |
-| ¿Para qué se usó? | |
-| ¿Qué se aceptó? | |
-| ¿Qué se modificó? | |
-| ¿Qué se rechazó? | |
-| ¿Qué supuesto de IA fue problemático? | |
-| ¿Cómo se verificó? | |
-| ¿Cuál fue la decisión humana final? | |
-| ¿Qué riesgo permanece? | |
+| ¿Qué herramienta se usó? | ChatGPT y Claude. |
+| ¿Para qué se usó? | Revisión inicial y diagnóstico del sistema, verificación de cumplimiento semanal, sugerencias de atributos de calidad a partir de la revisión del repositorio original, y evaluación de escenarios y riesgos. |
+| ¿Qué se aceptó? | Los supuestos relacionados con riesgos (en su mayoría) y con atributos de calidad. El diagnóstico inicial no requirió refutación, ya que en las siguientes etapas del proyecto se aportó mayor contexto que lo confirmó. |
+| ¿Qué se modificó? | Los resultados relacionados con atributos e implementaciones, dado que en varios casos la IA no reconoció componentes ya existentes en el sistema (p. ej. Docker, `contentDescription`). Fue necesaria la intervención del equipo para agregar contexto al repositorio y a la documentación. |
+| ¿Qué se rechazó? | El riesgo de compatibilidad con otros sistemas operativos, ya que no responde a la lógica de negocio original y se sale del alcance definido del proyecto. También se rechazó el riesgo por ausencia de un modo offline: aunque representa una oportunidad de crecimiento futuro del sistema, no responde a la lógica de negocio original, por lo que nunca se contempló como parte del alcance actual (se deja registrado para futuras implementaciones). |
+| ¿Cuál fue la decisión humana final? | Los riesgos planteados responden al contexto real del problema, por lo que no se realizan cambios en la mayoría de los casos. Sin embargo, para la descripción del estado actual del sistema (ya documentado) fue necesaria la intervención directa del equipo de desarrollo sin uso exclusivo de IA, dado que esta no comprende el contexto en su totalidad, lo cual generaba incongruencias en las descripciones. Los componentes de estructura y composición del sistema no se han modificado con respecto a lo planteado inicialmente. |
+| ¿Qué riesgo permanece? | Según el consenso entre la IA y el equipo de desarrollo, el riesgo que permanece es el del backend como posible punto único de ruptura (*single point of failure*) del sistema. |
