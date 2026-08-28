@@ -47,16 +47,16 @@ que lo demuestra, dentro de `/experimentos` o como referencia a un commit espec�
 
 | # | Afirmación sobre el sistema | Estado | Cómo se verifica | Resultado |
 |---|---|---|---|---|
-| 1 | El backend está contenerizado con Docker | Por verificar | Existencia de `Dockerfile` en el repo backend y su uso efectivo en el despliegue | |
-| 2 | El backend corre sobre EC2 `t2.micro` (1 vCPU / 1 GB) | Por verificar | Consola de AWS; `lscpu` y `free -h` en la instancia | |
-| 3 | No existen pruebas automatizadas en backend ni cliente | Por verificar | Búsqueda de `tests/`, `pytest.ini`, `androidTest/`, `test/` en ambos repos | |
-| 4 | Las credenciales se manejan en `.env` sin gestor de secretos | Por verificar | Inspección del repo y del workflow de GitHub Actions | |
-| 5 | El bucket S3 no permite listado ni escritura pública | Por verificar | Configuración de permisos del bucket; intento de acceso anónimo | |
-| 6 | La app se comunica con la API exclusivamente por HTTPS | Por verificar | Inspección de la URL base en el cliente; prueba de rechazo de HTTP | |
-| 7 | Las credenciales de "Recordarme" se almacenan cifradas | Por verificar | Revisión del código: `EncryptedSharedPreferences` frente a `SharedPreferences` | |
-| 8 | Se usa `contentDescription` en los elementos interactivos | Por verificar | Búsqueda en el código Compose; Accessibility Scanner | |
-| 9 | El backend es el cuello de botella de desempeño | Por medir | Prueba de carga — ver documento 04 | |
-| 10 | No existe ambiente de staging | Por verificar | Revisión de workflows y ramas en GitHub Actions | |
+| 1 | El backend está contenerizado con Docker | **Verificado** | Existencia de `Dockerfile` en el repo backend y su uso efectivo en el despliegue | Confirmado mediante el uso de `docker-compose` y ejecución local exitosa. |
+| 2 | El backend corre sobre EC2 `t2.micro` (1 vCPU / 1 GB) | **Refutado** | Consola de AWS; `lscpu` y `free -h` en la instancia | La instancia EC2 existió, pero la versión actual se trasladó a contenedores Docker en entorno local. |
+| 3 | No existen pruebas automatizadas en backend ni cliente | **Verificado** | Búsqueda de `tests/`, `pytest.ini`, `androidTest/`, `test/` en ambos repos | Confirmada la ausencia total de pruebas unitarias o de integración. Solo existen pruebas de carga (k6). |
+| 4 | Las credenciales se manejan en `.env` sin gestor de secretos | **Verificado** | Inspección del repo y del workflow de GitHub Actions | Comprobado en entorno local: las variables críticas se inyectan mediante archivo `.env`. |
+| 5 | El bucket S3 no permite listado ni escritura pública | **Verificado** | Configuración de permisos del bucket; intento de acceso anónimo | Confirmado. Permite subida controlada desde la app pero bloquea listado y escritura pública. |
+| 6 | La app se comunica con la API exclusivamente por HTTPS | **Refutado** | Inspección de la URL base en el cliente; prueba de rechazo de HTTP | El equipo de Android confirmó que la URL base de conexión utiliza HTTP plano, sin cifrado. |
+| 7 | Las credenciales de "Recordarme" se almacenan cifradas | **Verificado** | Revisión del código: `EncryptedSharedPreferences` frente a `SharedPreferences` | Confirmado según la revisión del código en el cliente. |
+| 8 | Se usa `contentDescription` en los elementos interactivos | **Verificado** | Búsqueda en el código Compose; Accessibility Scanner | Confirmado por el equipo de Android en los componentes de Jetpack Compose. |
+| 9 | El backend es el cuello de botella de desempeño | **Refutado** | Prueba de carga — ver documento 04 | Pruebas con k6 (15 VUs) arrojaron 100% de éxito con p(95) < 530ms; el backend soporta la carga sin ahogarse. |
+| 10 | No existe ambiente de staging | **Verificado** | Revisión de workflows y ramas en GitHub Actions | Confirmado. El repositorio actual carece de workflows de CI/CD para despliegue en staging. |
 
 ---
 
@@ -67,13 +67,13 @@ condiciona y qué evidencia lo respalda.
 
 | Atributo | Significado en UrbanFix | Condicionantes actuales | Riesgo | Evidencia |
 |---|---|---|---|---|
-| **Seguridad** | Protección de imágenes y geolocalización de ciudadanos identificables | Ley 1581/2012; credenciales en `.env`; buckets S3 | Alto | Por verificar (§2, filas 4–7) |
-| **Disponibilidad** | Que el ciudadano pueda enviar y consultar reportes cuando lo necesita | Instancia EC2 única sin respaldo; BD gestionada en Neon | Alto | Por verificar (§2, fila 2) |
-| **Rendimiento** | Cumplir el RNF #1: crear un reporte en menos de 90 s de punta a punta | Capacidad de cómputo del backend; subida de imágenes a S3; latencia de Gemini | Alto | Por medir (doc 04) |
-| **Desplegabilidad** | Publicar cambios sin romper el servicio de los usuarios | CI/CD funcional; sin staging ni rollback automático | Medio | Por verificar (§2, filas 1 y 10) |
-| **Mantenibilidad** | Poder cambiar el sistema con confianza | MVVM y Blueprints consistentes; migraciones versionadas; sin pruebas | Medio | Por verificar (§2, fila 3) |
-| **Escalabilidad** | Crecer más allá de la localidad piloto | Escalamiento solo vertical en backend; S3 y Neon elásticos | Medio | Por medir (doc 04) |
-| **Accesibilidad** | Uso por adultos mayores con menor alfabetización digital | Soporte nativo de Compose, implementación por confirmar | Medio | Por verificar (§2, fila 8) |
+| **Seguridad** | Protección de imágenes y geolocalización de ciudadanos identificables | Ley 1581/2012; credenciales en `.env`; buckets S3; falta de HTTPS | **Alto** | Verificado (§2, filas 4–7). Riesgo elevado por tráfico HTTP plano y secretos en `.env`. |
+| **Disponibilidad** | Que el ciudadano pueda enviar y consultar reportes cuando lo necesita | Ejecución local en contenedores; dependencia de BD gestionada en Neon | **Alto** | Verificado (§2, fila 2). Ausencia de alta disponibilidad al correr en entorno local/único nodo. |
+| **Rendimiento** | Cumplir el RNF #1: crear un reporte en menos de 90 s de punta a punta | Capacidad de cómputo del backend; subida de imágenes a S3; latencia de Gemini | **Bajo** | Medido (doc 04). k6 demostró respuesta p(95) < 530ms bajo carga concurrente, superando el RNF #1. |
+| **Desplegabilidad** | Publicar cambios sin romper el servicio de los usuarios | Despliegue manual; sin pipeline CI/CD activo ni staging automático | **Medio** | Verificado (§2, filas 1 y 10). La ausencia de staging incrementa el riesgo de fallos en producción. |
+| **Mantenibilidad** | Poder cambiar el sistema con confianza | MVVM y Blueprints consistentes; migraciones versionadas; sin pruebas unitarias | **Medio** | Verificado (§2, fila 3). Las pruebas k6 evalúan carga, pero falta cobertura de unitarias para validar lógica. |
+| **Escalabilidad** | Crecer más allá de la localidad piloto | Backend local contenerizado (preparado para orquestación); S3 y Neon elásticos | **Medio** | Medido (doc 04). La contenerización actual facilita un futuro escalamiento horizontal si se despliega en nube. |
+| **Accesibilidad** | Uso por adultos mayores con menor alfabetización digital | Soporte nativo de Compose; atributos etiquetados correctamente | **Bajo** | Verificado (§2, fila 8). Inclusión de `contentDescription` confirmada en los elementos de UI. |
 
 ---
 
@@ -83,10 +83,10 @@ Priorizar significa que algo queda abajo. Si todos los atributos resultan críti
 
 | Prioridad | Atributos | Justificación desde los drivers de RA1 |
 |---|---|---|
-| **Crítica** | Seguridad, Disponibilidad | |
-| **Alta** | Rendimiento, Desplegabilidad | |
-| **Media** | Mantenibilidad, Escalabilidad | |
-| **Baja** | Accesibilidad | |
+| **Crítica** | Seguridad, Disponibilidad | La seguridad es obligatoria para cumplir la Ley 1581/2012 sobre protección de datos personales. La disponibilidad es vital porque los reportes sustentan un derecho de petición; si el backend cae, se bloquea el proceso legal. |
+| **Alta** | Rendimiento, Desplegabilidad | El rendimiento está condicionado por el RNF #1 (tope de 90s para crear un reporte de punta a punta). La desplegabilidad es urgente para mitigar el riesgo de hacer despliegues manuales sin un ambiente de staging o pruebas automatizadas unitarias. |
+| **Media** | Mantenibilidad, Escalabilidad | La mantenibilidad es necesaria para soportar el RNF #2 (enrutar dinámicamente cada reporte a la entidad competente a futuro). La escalabilidad prepara al sistema para soportar picos de concurrencia ciudadana más allá de la localidad piloto. |
+| **Baja** | Accesibilidad | Aunque es una buena práctica y ya cuenta con `contentDescription`, actualmente no hay un requerimiento explícito en los drivers principales que lo posicione por encima de la estabilidad core de la arquitectura actual. |
 
 La columna de justificación se completa con argumento propio. Cada justificación debe apuntar a un
 stakeholder, una restricción o una norma concreta del documento 02, no a una preferencia técnica
@@ -105,11 +105,11 @@ arquitectónica responde a qué atributo, y de qué driver proviene. Cada una an
 
 | Driver (RA1) | Atributo priorizado | Decisión arquitectónica que lo atiende | Escenario que lo verifica | ADR |
 |---|---|---|---|---|
-| Ley 1581/2012 obliga a proteger datos personales de ciudadanos | Seguridad | | ESC-04 | ADR-00_ |
-| El backend es punto único de falla y los reportes sustentan un derecho de petición | Disponibilidad | | ESC-02 | ADR-00_ |
-| RNF #1 fija un tope de 90 s para crear un reporte | Rendimiento | | ESC-01 | ADR-00_ |
-| RNF #2 exige enrutar cada reporte a la entidad competente | Interoperabilidad / Mantenibilidad | | ESC-06 | ADR-00_ |
-| No hay pruebas: cada despliegue va directo a producción | Mantenibilidad / Desplegabilidad | | ESC-05 | ADR-00_ |
+| Ley 1581/2012 obliga a proteger datos personales de ciudadanos | Seguridad | Migrar la gestión de secretos (del archivo `.env`) a un gestor seguro (ej. AWS Secrets Manager) y forzar HTTPS en toda la comunicación cliente-API. | ESC-04 | ADR-001 |
+| El backend es punto único de falla y los reportes sustentan un derecho de petición | Disponibilidad | Desplegar los contenedores Docker del backend detrás de un balanceador de carga, distribuidos en múltiples zonas de disponibilidad (Multi-AZ). | ESC-02 | ADR-002 |
+| RNF #1 fija un tope de 90 s para crear un reporte | Rendimiento | Descargar la carga del backend implementando la subida directa y asíncrona de imágenes al bucket S3 utilizando URLs prefirmadas (*Presigned URLs*). | ESC-01 | ADR-003 |
+| RNF #2 exige enrutar cada reporte a la entidad competente | Interoperabilidad / Mantenibilidad | Implementar un modelo orientado a eventos (pub/sub) o un patrón *Strategy* para desacoplar la lógica de enrutamiento del controlador base. | ESC-06 | ADR-004 |
+| No hay pruebas: cada despliegue va directo a producción | Mantenibilidad / Desplegabilidad | Implementar un pipeline de CI/CD (ej. GitHub Actions) que bloquee pases sin pruebas exitosas y automatice el despliegue inicial hacia un ambiente de *staging*. | ESC-05 | ADR-005 |
 
 Ningún atributo de prioridad Crítica o Alta puede quedar sin al menos una fila. Si alguno no tiene
 decisión asociada, o la prioridad estaba mal puesta, o falta una decisión por tomar; ambas cosas
