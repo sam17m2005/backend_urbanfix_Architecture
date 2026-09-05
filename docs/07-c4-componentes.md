@@ -1,48 +1,5 @@
 # UrbanFix — C4 Nivel 3: Diagrama de Componentes
 
-**Proyecto:** UrbanFix — Aplicación móvil para el reporte de problemáticas urbanas
-**Asignatura:** Arquitectura de Software — Universidad de Bogotá Jorge Tadeo Lozano
-**Documentos previos:** [01](./01-contexto-sistema.md) · [02](./02-stakeholders-drivers.md) · [03](./03-atributos-calidad.md) · [04](./04-escenarios-calidad.md) · [05](./05-c4-contexto.md) · [06](./06-c4-contenedores.md)
-
----
-
-## Índice interno
-
-1. Propósito y audiencia de esta vista
-2. Diagrama C4 Nivel 3 — Componentes
-3. Componentes y sus relaciones
-4. Tabla de trazado C4 (Nivel 2 y Nivel 3)
-5. Registro de correcciones y eliminaciones
-6. Declaración de uso de IA
-
----
-
-## 1. Propósito y audiencia de esta vista
-
-Esta vista responde: **¿de qué partes internas está hecho el contenedor "API Backend" y cómo se
-relacionan entre sí y con lo externo?** Es la vista de mayor detalle de la serie C4 de este
-proyecto — por debajo de Nivel 3 ya se está en el código fuente, no en un diagrama.
-
-**Audiencia:** el equipo de desarrollo que va a modificar el backend, y el evaluador que necesita
-comprobar que el modelo arquitectónico corresponde al código real y no a una intención de diseño no
-implementada.
-
-**Alcance declarado:** se documentan únicamente los componentes del contenedor **API Backend**
-(Flask), por ser el único contenedor de este repositorio con código fuente propio. El contenedor
-"Cliente Android" no se descompone en componentes porque su código no está en este repositorio —
-se referencia solo para mostrar dónde termina la responsabilidad del backend.
-
-**Contenido mínimo cubierto en este documento**, según lo exigido:
-
-- Diagrama C4 Nivel 3 con los componentes arquitectónicamente relevantes.
-- Responsabilidades y relaciones de cada componente.
-- Tabla completa de trazado C4.
-- Registro de correcciones/eliminaciones después de validar contra el código.
-
-**No se presenta un inventario de todas las clases del sistema.** La tabla de la sección 4 cubre
-únicamente los contenedores y componentes que el equipo decidió representar como
-arquitectónicamente relevantes en los diagramas C4 (secciones 2 y en
-[06-c4-contenedores.md](./06-c4-contenedores.md)).
 
 ---
 
@@ -88,15 +45,6 @@ C4Component
     UpdateElementStyle(modelos, $bgColor="#438dd5", $fontColor="#ffffff")
     UpdateElementStyle(s3util, $bgColor="#438dd5", $fontColor="#ffffff")
 ```
-
-**Nota de honestidad arquitectónica.** El backend real **no** tiene una capa de servicios separada
-de las rutas (no existen clases `ReporteService`, `AuthService` ni equivalentes). Toda la lógica de
-negocio vive directamente en los manejadores de ruta de un único Blueprint (`app/routes.py`). Los
-cuatro "módulos" del diagrama (Auth, Reportes, Interacciones, Funcionarios/Entidades) son
-**agrupaciones lógicas de rutas por responsabilidad**, no clases reales — a diferencia de la Capa de
-Modelos ORM y las Utilidades de Almacenamiento, que sí son módulos de código separados
-(`models.py`, `utils.py`). Esta distinción se declara explícitamente en la tabla de la sección 4,
-y el intento inicial de modelar una capa de servicios se registra como **eliminado** en la sección 5.
 
 ---
 
@@ -151,15 +99,3 @@ columna "Observación / corrección" de la tabla anterior.
 | 2 | Se consideró representar "Base de datos PostgreSQL" como un único contenedor sin distinguir entornos | **Corregido**: se documentaron explícitamente las dos anclas reales (Neon vía variables `PGHOST`/`PGUSER`/`PGDATABASE`, y contenedor Docker local vía `DATABASE_URL`) | `config.py:7-19` resuelve `SQLALCHEMY_DATABASE_URI` de dos formas distintas según exista o no `DATABASE_URL`; `docker-compose.yml` define el servicio `db` local | C4-2-03 |
 | 3 | Se consideró listar "Gemini AI" y "Mapbox" como componentes de Nivel 3 del backend, siguiendo el detalle del contexto del documento 05 | **Eliminado** de esta tabla (no se creó fila para ellos) | Ya verificado en [05-c4-contexto.md §4.1](./05-c4-contexto.md): esas integraciones son del cliente Android, no del backend — incluirlas aquí repetiría el error ya corregido en el documento 04 §7.2 | — (no aplica ID; se documenta como ausencia deliberada) |
 | 4 | Se consideró marcar "Cliente Android" como `Verificado` igual que los demás contenedores | **Corregido** a un estado propio (`Fuera de alcance`) en vez de forzarlo a una de las tres categorías obligatorias | El código Android no existe en este repositorio backend; marcarlo `Verificado` habría sido una afirmación sin evidencia inspeccionable | C4-2-01 |
-
----
-
-## 6. Declaración de uso de IA
-
-| Pregunta | Respuesta |
-|---|---|
-| ¿Qué herramienta se usó? | Claude (Anthropic), en sesión de apoyo del 4 de septiembre de 2026. |
-| ¿Para qué se usó? | Construir el diagrama C4 Nivel 3 en Mermaid y la tabla completa de trazado C4 (Nivel 2 y Nivel 3), a partir de inspección directa del código del backend (`app/routes.py`, `app/models.py`, `app/utils.py`, `app/__init__.py`, `config.py`, `docker-compose.yml`, `Dockerfile`) y de los documentos 04 y 05 ya existentes en el repositorio. |
-| ¿Qué se verificó? | Cada fila de la tabla de trazado se contrastó contra una línea o rango de líneas real del código antes de marcarla `Verificado`. Los tres elementos que no calificaban para ese estado (capa de servicios inexistente, dualidad de base de datos, cliente fuera del repositorio) se clasificaron explícitamente como `Eliminado`, `Corregido` o `Fuera de alcance`, según correspondiera, en vez de forzarlos a `Verificado`. |
-| ¿Qué se rechazó? | La tentación de completar el diagrama con una capa de servicios "esperable" en una API REST bien diseñada, cuando el código real no la tiene. Incluirla habría hecho el diagrama más prolijo pero falso. |
-| ¿Qué riesgo permanece? | La tabla cubre los componentes que el equipo decidió representar como arquitectónicamente relevantes, no un inventario exhaustivo de todas las funciones de `routes.py` (hay rutas menores, como `/categorias` o `/estados-reporte`, agrupadas implícitamente dentro de los módulos de Reportes y no desglosadas en filas propias). Si la rúbrica exige desglose función por función, esta tabla necesitaría filas adicionales. |
