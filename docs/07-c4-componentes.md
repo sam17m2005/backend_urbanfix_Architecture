@@ -2,48 +2,65 @@
 
 
 ---
+## NIVEL 2 — Diagrama de Contenedores
 
-## 2. Diagrama C4 Nivel 3 — Componentes
+```mermaid
+flowchart TB
+    appMovil["📱 App Móvil<br/><b>[Contenedor: App Móvil]</b><br/>Permite a usuarios civiles y<br/>funcionarios reportar y<br/>consultar daños"]
+
+    backend["⚙️ Backend API<br/><b>[Contenedor: Flask - Docker]</b><br/>Expone API REST, contiene<br/>la lógica de negocio del sistema"]
+
+    baseDatos[("🗄️ Base de Datos<br/><b>[Contenedor: PostgreSQL]</b><br/>Almacena usuarios, reportes<br/>y datos del sistema")]
+
+    appMovil -- "Consume<br/>[API REST/HTTPS]" --> backend
+    backend -- "Lee y escribe datos<br/>[SQL/TCP 5432]" --> baseDatos
+
+    style backend fill:#1168bd,color:#fff,stroke:#0b4884,stroke-width:2px
+    style appMovil fill:#438dd5,color:#fff,stroke:#2e6295,stroke-width:2px
+    style baseDatos fill:#438dd5,color:#fff,stroke:#2e6295,stroke-width:2px
+```
+
+
+
+
+
+## NIVEL 3 — Diagramas de Componentes
 
 > Foco: contenedor **API Backend**. El diagrama de contenedores completo (Nivel 2) está en
 > [06-c4-contenedores.md](./06-c4-contenedores.md).
 
 ```mermaid
-C4Component
-    title Diagrama de Componentes (C4 Nivel 3) — Contenedor "API Backend"
+flowchart TB
+    subgraph Movil["App Móvil"]
+        direction TB
+        screens["📱 Screens<br/><b>[Componente]</b><br/>Pantallas de la interfaz"]
+        navigation["🧭 Navigation<br/><b>[Componente]</b><br/>Gestión de navegación<br/>entre pantallas"]
+        viewModel["🧠 ViewModel<br/><b>[Componente]</b><br/>Maneja el estado y<br/>lógica de datos para las Screens"]
+        services["⚡ Services<br/><b>[Componente]</b><br/>Gestiona la conexión<br/>con Gemini"]
+        network["🌐 Network<br/><b>[Componente]</b><br/>Gestiona la comunicación<br/>con el Backend (API REST)"]
+        data["💾 Data<br/><b>[Componente]</b><br/>Persistencia de datos<br/>local"]
+    end
 
-    Container(android, "Cliente Android", "Kotlin + Jetpack Compose", "Consume la API REST. Fuera del alcance de este repositorio.")
+    backend["⚙️ Backend API<br/><b>[Contenedor: Flask]</b>"]
+    gemini["☁️ Gemini API<br/><b>[Software System]</b>"]
 
-    Container_Boundary(api, "API Backend (Flask)") {
-        Component(auth, "Módulo de Usuarios y Autenticación", "Flask Blueprint (routes.py)", "POST /usuarios, POST /login, PUT/DELETE /usuarios/<id>.")
-        Component(reportes, "Módulo de Reportes", "Flask Blueprint (routes.py)", "GET/POST /reportes, GET /misreportes, GET /reportes/geojson, PUT /reportes/<id>/estado.")
-        Component(interacciones, "Módulo de Interacciones", "Flask Blueprint (routes.py)", "Comentarios y reacciones: /reportes/<id>/comentarios, /reportes/<id>/reaccion.")
-        Component(entidades, "Módulo de Funcionarios y Entidades", "Flask Blueprint (routes.py)", "POST/GET /funcionarios, POST/GET /entidades.")
-        Component(modelos, "Capa de Modelos ORM", "SQLAlchemy (models.py)", "Define Usuario, Reporte, Comentario, Funcionario, Apoyo, Categoria, EntidadPublica, Zona, EstadoReporte.")
-        Component(s3util, "Utilidades de Almacenamiento", "boto3 + Pillow (utils.py)", "upload_base64_to_s3, upload_profile_pic_to_s3: decodifica base64, normaliza con Pillow y sube a S3.")
-    }
+    screens --> navigation
+    screens --> viewModel
+    viewModel --> data
+    viewModel --> network
+    viewModel --> services
+    network --> backend
+    services --> gemini
 
-    ContainerDb(db, "Base de datos PostgreSQL", "PostgreSQL 16", "Neon (declarado) o contenedor local (docker-compose.yml).")
-    System_Ext(s3, "AWS S3", "Almacenamiento de imágenes.")
-
-    Rel(android, auth, "Autenticación y gestión de cuenta", "HTTPS / JSON")
-    Rel(android, reportes, "Crear/consultar reportes", "HTTPS / JSON")
-    Rel(android, interacciones, "Comentar y reaccionar", "HTTPS / JSON")
-    Rel(android, entidades, "Consultar funcionarios/entidades", "HTTPS / JSON")
-
-    Rel(auth, modelos, "Usa", "ORM")
-    Rel(reportes, modelos, "Usa", "ORM")
-    Rel(interacciones, modelos, "Usa", "ORM")
-    Rel(entidades, modelos, "Usa", "ORM")
-
-    Rel(reportes, s3util, "Sube imágenes de reportes", "Llamada directa (import en routes.py)")
-    Rel(auth, s3util, "Sube foto de perfil", "Llamada directa (import en routes.py)")
-
-    Rel(modelos, db, "Persiste", "SQL vía SQLAlchemy")
-    Rel(s3util, s3, "Sube objetos", "AWS SDK (boto3)")
-
-    UpdateElementStyle(modelos, $bgColor="#438dd5", $fontColor="#ffffff")
-    UpdateElementStyle(s3util, $bgColor="#438dd5", $fontColor="#ffffff")
+    style screens fill:#85bbf0,color:#000,stroke:#2e6295
+    style navigation fill:#85bbf0,color:#000,stroke:#2e6295
+    style viewModel fill:#85bbf0,color:#000,stroke:#2e6295
+    style services fill:#85bbf0,color:#000,stroke:#2e6295
+    style network fill:#85bbf0,color:#000,stroke:#2e6295
+    style data fill:#85bbf0,color:#000,stroke:#2e6295
+    style backend fill:#1168bd,color:#fff,stroke:#0b4884,stroke-width:2px
+    style gemini fill:#999999,color:#fff,stroke:#6b6b6b
+    style Movil fill:#f5f8ff,stroke:#1168bd,stroke-width:1px,stroke-dasharray: 5 5
 ```
 
 ---
