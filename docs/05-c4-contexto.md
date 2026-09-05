@@ -1,4 +1,4 @@
-# Descripción del Modelo C4 (hasta NIVEL 3) – UrbanFix
+# Descripción del Modelo C4 (Nivel 1) – UrbanFix
 
 **Autores:** Johan Felipe Aguilar Castillo · Samuel Alejandro González Grajales · Juan David Barragán
 
@@ -10,6 +10,7 @@ Tenemos un sistema general de reportes de daños de infraestructura ciudadana. S
 
 ```mermaid
 flowchart TB
+
     subgraph Usuarios[" "]
         direction LR
         usuarioCivil["👤 Usuario Civil<br/><b>Persona</b><br/>Ciudadano que reporta daños<br/>en la infraestructura pública"]
@@ -38,150 +39,33 @@ flowchart TB
     style Externos fill:none,stroke:none
 ```
 
----
+### Descripción de la vista
 
-## NIVEL 2 — Diagrama de Contenedores
-
-- **Contenedor Móvil:** conectado al backend por medio de API REST.
-- **Backend con Flask:** conectado a la base de datos por el puerto 5432; en estado actual el backend corre sobre Docker.
-- **Base de Datos PostgreSQL.**
-
-```mermaid
-flowchart TB
-    appMovil["📱 App Móvil<br/><b>[Contenedor: App Móvil]</b><br/>Permite a usuarios civiles y<br/>funcionarios reportar y<br/>consultar daños"]
-
-    backend["⚙️ Backend API<br/><b>[Contenedor: Flask - Docker]</b><br/>Expone API REST, contiene<br/>la lógica de negocio del sistema"]
-
-    baseDatos[("🗄️ Base de Datos<br/><b>[Contenedor: PostgreSQL]</b><br/>Almacena usuarios, reportes<br/>y datos del sistema")]
-
-    appMovil -- "Consume<br/>[API REST/HTTPS]" --> backend
-    backend -- "Lee y escribe datos<br/>[SQL/TCP 5432]" --> baseDatos
-
-    style backend fill:#1168bd,color:#fff,stroke:#0b4884,stroke-width:2px
-    style appMovil fill:#438dd5,color:#fff,stroke:#2e6295,stroke-width:2px
-    style baseDatos fill:#438dd5,color:#fff,stroke:#2e6295,stroke-width:2px
-```
+- **Propósito de la vista:** mostrar, en el nivel más alto de abstracción del modelo C4, cómo el Sistema de Reportes de Daños de Infraestructura Ciudadana (UrbanFix) se relaciona con las personas que lo usan y con los sistemas externos de los que depende, sin entrar todavía en detalles de contenedores o componentes internos.
+- **Audiencia:** stakeholders no técnicos y técnicos que necesitan entender el alcance general del sistema (docentes evaluadores, equipo del proyecto, entidades públicas interesadas), antes de profundizar en decisiones de arquitectura interna.
+- **Personas / actores:**
+  - *Usuario Civil:* ciudadano que reporta daños en la infraestructura pública.
+  - *Funcionario:* empleado público que gestiona y da seguimiento a los reportes.
+- **Sistemas externos relevantes:**
+  - *MapBox API:* servicio externo de mapas y geolocalización.
+  - *Gemini API:* servicio externo de IA generativa.
+- **Relaciones principales:** el sistema recibe reportes y consultas de los Usuarios Civiles, recibe gestión y seguimiento de los Funcionarios, y a su vez consume dos servicios externos (MapBox para geolocalización y Gemini para análisis de datos).
 
 ---
 
-## NIVEL 3 — Diagramas de Componentes
+## Análisis de las relaciones
 
-### 3.1 — Componentes del Contenedor Móvil
+**Usuario Civil → Sistema de Reportes de Daños ("Envía y consulta reportes" [HTTP])**
+Esta relación representa el flujo principal de entrada de información al sistema: el ciudadano crea un reporte de daño (por ejemplo, un hueco en la vía o un daño en el alumbrado público) y también consulta el estado de reportes ya existentes. Al ser HTTP, se asume que la interacción ocurre a través de la app móvil, que internamente consume la API REST del backend. Esta relación es la que le da sentido social al sistema: sin la participación ciudadana no habría datos que gestionar.
 
-Dividido en:
+**Funcionario → Sistema de Reportes de Daños ("Gestiona reportes" [HTTP])**
+Representa el flujo de administración y seguimiento: el funcionario público revisa los reportes generados por los ciudadanos, actualiza su estado, y en general ejerce el rol de gestión sobre la información recolectada. Esta relación cierra el ciclo del propósito del sistema, ya que convierte los reportes ciudadanos en acciones o respuestas institucionales.
 
-- **Screens:** Pantallas de la interfaz.
-- **Navigation:** Gestión de navegación entre pantallas.
-- **Services:** Gestiona la conexión con Gemini.
-- **Network:** Gestiona la comunicación con el backend.
-- **Data:** Persistencia de datos.
-- **ViewModel:** Contiene los ViewModel para manejo de datos.
+**Sistema de Reportes de Daños → MapBox API ("Obtiene geolocalización" [HTTP/API])**
+Esta relación es una dependencia técnica: el sistema delega en un servicio externo especializado la resolución de ubicaciones geográficas (coordenadas, direcciones, mapas), en lugar de implementar esa lógica internamente. Esto reduce la complejidad propia del sistema, pero también introduce una dependencia externa: si MapBox no está disponible, la funcionalidad de geolocalización del sistema se ve afectada.
 
-```mermaid
-flowchart TB
-    subgraph Movil["App Móvil"]
-        direction TB
-        screens["📱 Screens<br/><b>[Componente]</b><br/>Pantallas de la interfaz"]
-        navigation["🧭 Navigation<br/><b>[Componente]</b><br/>Gestión de navegación<br/>entre pantallas"]
-        viewModel["🧠 ViewModel<br/><b>[Componente]</b><br/>Maneja el estado y<br/>lógica de datos para las Screens"]
-        services["⚡ Services<br/><b>[Componente]</b><br/>Gestiona la conexión<br/>con Gemini"]
-        network["🌐 Network<br/><b>[Componente]</b><br/>Gestiona la comunicación<br/>con el Backend (API REST)"]
-        data["💾 Data<br/><b>[Componente]</b><br/>Persistencia de datos<br/>local"]
-    end
+**Sistema de Reportes de Daños → Gemini API ("Envía datos para análisis" [HTTP/API])**
+Refleja el uso de un servicio de IA generativa externo para procesar o enriquecer los datos de los reportes (por ejemplo, clasificación automática del tipo de daño a partir de imágenes o texto). Al igual que con MapBox, el sistema delega una capacidad especializada (procesamiento de IA) en un proveedor externo, lo que agiliza el desarrollo pero acopla el funcionamiento del sistema a la disponibilidad y comportamiento de un tercero.
 
-    backend["⚙️ Backend API<br/><b>[Contenedor: Flask]</b>"]
-    gemini["☁️ Gemini API<br/><b>[Software System]</b>"]
-
-    screens --> navigation
-    screens --> viewModel
-    viewModel --> data
-    viewModel --> network
-    viewModel --> services
-    network --> backend
-    services --> gemini
-
-    style screens fill:#85bbf0,color:#000,stroke:#2e6295
-    style navigation fill:#85bbf0,color:#000,stroke:#2e6295
-    style viewModel fill:#85bbf0,color:#000,stroke:#2e6295
-    style services fill:#85bbf0,color:#000,stroke:#2e6295
-    style network fill:#85bbf0,color:#000,stroke:#2e6295
-    style data fill:#85bbf0,color:#000,stroke:#2e6295
-    style backend fill:#1168bd,color:#fff,stroke:#0b4884,stroke-width:2px
-    style gemini fill:#999999,color:#fff,stroke:#6b6b6b
-    style Movil fill:#f5f8ff,stroke:#1168bd,stroke-width:1px,stroke-dasharray: 5 5
-```
-
-### 3.2 — Componentes del Backend (Flask)
-
-- **POST /login:** Valida credenciales y retorna rol (Usuario/Funcionario).
-- **POST /usuarios:** Registra nuevas cuentas.
-- **GET /usuarios:** Lista usuarios registrados.
-- **POST /reportes:** Crea denuncias con geolocalización e imágenes.
-- **GET /reportes:** Lista reportes (incluye conteo de apoyos y estado).
-- **POST /apoyos:** Registra reacciones (like/dislike) a los reportes.
-- **POST /comentarios:** Añade actualizaciones o notas a un reporte.
-- **GET /categorias:** Retorna tipos de daños (ej. Malla Vial).
-- **GET /entidades_publicas:** Retorna entidades responsables.
-
-Los 9 endpoints se agrupan por dominio funcional (Autenticación, Usuarios, Reportes, Interacciones, Catálogos).
-
-```mermaid
-flowchart TB
-    subgraph Backend["Backend API (Flask - Docker)"]
-        direction LR
-
-        subgraph Auth["Autenticación"]
-            direction TB
-            login["🔐 POST /login<br/><b>[Componente]</b><br/>Valida credenciales y<br/>retorna rol"]
-        end
-
-        subgraph Usuarios["Usuarios"]
-            direction TB
-            postUsuarios["👤 POST /usuarios<br/><b>[Componente]</b><br/>Registra nuevas cuentas"]
-            getUsuarios["👥 GET /usuarios<br/><b>[Componente]</b><br/>Lista usuarios registrados"]
-        end
-
-        subgraph Reportes["Reportes"]
-            direction TB
-            postReportes["📝 POST /reportes<br/><b>[Componente]</b><br/>Crea denuncias con<br/>geolocalización e imágenes"]
-            getReportes["📋 GET /reportes<br/><b>[Componente]</b><br/>Lista reportes (apoyos y estado)"]
-        end
-
-        subgraph Interacciones["Interacciones"]
-            direction TB
-            postApoyos["👍 POST /apoyos<br/><b>[Componente]</b><br/>Registra like/dislike"]
-            postComentarios["💬 POST /comentarios<br/><b>[Componente]</b><br/>Añade notas a un reporte"]
-        end
-
-        subgraph Catalogos["Catálogos"]
-            direction TB
-            getCategorias["🏷️ GET /categorias<br/><b>[Componente]</b><br/>Tipos de daños"]
-            getEntidades["🏛️ GET /entidades_publicas<br/><b>[Componente]</b><br/>Entidades responsables"]
-        end
-    end
-
-    baseDatos[("🗄️ Base de Datos<br/><b>[Contenedor: PostgreSQL]</b>")]
-
-    Auth --> baseDatos
-    Usuarios --> baseDatos
-    Reportes --> baseDatos
-    Interacciones --> baseDatos
-    Catalogos --> baseDatos
-
-    style login fill:#85bbf0,color:#000,stroke:#2e6295
-    style postUsuarios fill:#85bbf0,color:#000,stroke:#2e6295
-    style getUsuarios fill:#85bbf0,color:#000,stroke:#2e6295
-    style postReportes fill:#85bbf0,color:#000,stroke:#2e6295
-    style getReportes fill:#85bbf0,color:#000,stroke:#2e6295
-    style postApoyos fill:#85bbf0,color:#000,stroke:#2e6295
-    style postComentarios fill:#85bbf0,color:#000,stroke:#2e6295
-    style getCategorias fill:#85bbf0,color:#000,stroke:#2e6295
-    style getEntidades fill:#85bbf0,color:#000,stroke:#2e6295
-    style baseDatos fill:#438dd5,color:#fff,stroke:#2e6295,stroke-width:2px
-    style Backend fill:#f5f8ff,stroke:#1168bd,stroke-width:1px,stroke-dasharray: 5 5
-    style Auth fill:none,stroke:#8ab4e8,stroke-dasharray: 3 3
-    style Usuarios fill:none,stroke:#8ab4e8,stroke-dasharray: 3 3
-    style Reportes fill:none,stroke:#8ab4e8,stroke-dasharray: 3 3
-    style Interacciones fill:none,stroke:#8ab4e8,stroke-dasharray: 3 3
-    style Catalogos fill:none,stroke:#8ab4e8,stroke-dasharray: 3 3
-```
+**Lectura general del diagrama**
+En conjunto, las cuatro relaciones muestran un sistema que actúa como intermediario entre dos tipos de personas (ciudadanos y funcionarios) con roles complementarios —una que reporta y consulta, otra que gestiona— y dos servicios externos que le aportan capacidades que el sistema no resuelve por sí mismo (geolocalización e inteligencia artificial). Esta vista de contexto deja claro el alcance del sistema (qué está dentro de la línea del sistema y qué queda fuera, como MapBox y Gemini) sin comprometerse todavía con decisiones de implementación, que es justamente lo que corresponde al Nivel 1 del modelo C4.
