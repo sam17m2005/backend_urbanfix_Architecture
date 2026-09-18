@@ -3,7 +3,7 @@
 **Proyecto:** UrbanFix — Aplicación móvil para el reporte de problemáticas urbanas
 **Asignatura:** Arquitectura de Software — Universidad de Bogotá Jorge Tadeo Lozano
 **Documentos previos:** [01](./01-contexto-sistema.md) · [02](./02-stakeholders-drivers.md) · [03](./03-atributos-calidad.md)
-**Evidencia cruda asociada:** `experimentos/medicion-escenario-07/`
+**Evidencia cruda asociada:** `exp/` (pendiente de cargar la salida de las corridas; ver sección 8)
 
 Este documento convierte los atributos priorizados en escenarios verificables y reporta la
 medición de línea base ejecutada contra el sistema real, con herramienta, método, condiciones y
@@ -159,7 +159,7 @@ Este escenario es el que se automatiza como función de aptitud en CI en las sem
 
 ---
 
-### ESC-07 — Autenticación concurrente
+### ESC-07 — Autenticación concurrente bajo escalado agresivo
 
 **Origen:** derivado de la medición de línea base. Formulado después de la medición, lo cual se declara
 explícitamente: el escenario se ajustó a lo que se midió, no al revés.
@@ -167,11 +167,11 @@ explícitamente: el escenario se ajustó a lo que se midió, no al revés.
 | Parte | Contenido |
 |---|---|
 | Fuente | Ciudadanos usuarios de la app |
-| Estímulo | N usuarios se autentican de forma concurrente |
-| Artefacto | Endpoint `POST /login` del backend Flask + consulta a PostgreSQL en Neon |
-| Entorno | Contenedor Docker en máquina de desarrollo local. No es el entorno de producción |
-| Respuesta | El sistema autentica correctamente sin errores |
-| Medida | p95 ≤ 1500 ms y tasa de error ≤ 5% con 15 VUs concurrentes durante 25 s |
+| Estímulo | Un número creciente de usuarios se autentica de forma concurrente, en una rampa de carga diseñada deliberadamente para llevar al sistema a su punto de quiebre |
+| Artefacto | Endpoint `POST /login` del backend Flask + consulta a PostgreSQL |
+| Entorno | Contenedor Docker en máquina de desarrollo local (IP `172.18.0.1`, gateway típico de una red Docker). No es el entorno de producción (EC2 `t2.micro` + Neon) |
+| Respuesta | Hipótesis previa, según el propio comentario del script (`"el martillazo... aquí debería romperse"`): el sistema **no** sostendría los 800 VUs sin degradarse |
+| Medida | El script no declara un bloque `thresholds` formal. Como referencia de calificación se adopta, por consistencia con el resto de este documento, una tasa de error ≤ 5%; se declara explícitamente que este umbral no fue parte del diseño original de la prueba |
 
 Formular un escenario después de medirlo es aceptable siempre que se declare. Lo que no es
 aceptable es presentarlo como si hubiera sido la hipótesis previa.
@@ -212,16 +212,16 @@ sección 7.
 | Aspecto | Definición |
 |---|---|
 | Herramienta | k6 |
-| Script | `Pruebas/prueba2.js`, rama `pruebas` del repositorio backend |
-| Endpoint objetivo | `POST /login` en `http://host.docker.internal:5000` |
-| Carga simulada | Rampa de 5 s hasta 5 VUs, sostenimiento de 15 s en 15 VUs, descenso de 5 s a 0 |
-| Pausa entre iteraciones | `sleep(0.3)` |
-| Umbrales declarados | `p(95)<1500` · `rate<0.05` |
+| Script | `Pruebas/prueba2.js`, rama `main` del repositorio backend |
+| Endpoint objetivo | `POST /login` en `http://172.18.0.1:5000` (IP de gateway de la red Docker local, no `host.docker.internal`) |
+| Carga simulada | Rampa en cuatro etapas: 10 s hasta 50 VUs, 20 s hasta 300 VUs, 20 s hasta 800 VUs, 10 s de descenso a 0 (60 s de duración total) |
+| Pausa entre iteraciones | `sleep(0.1)` |
+| Umbrales declarados | Ninguno. El script no define un bloque `thresholds`; no hay un criterio de éxito/fallo codificado en el instrumento |
 | Semilla | Credenciales fijas de prueba (`test@urbanfix.com`), sin distribución aleatoria |
-| Entorno medido | Local. Backend en contenedor Docker sobre equipo de desarrollo. La ejecución no se realizó sobre la instancia EC2 |
-| Equipo de ejecución | HP Laptop 14-cf3xxx (DESKTOP-V11ML71) · Intel Core i5-1035G1 a 1.00 GHz · 16 GB de RAM · Windows de 64 bits |
-| Métricas capturadas | p50, p95, p99, throughput, tasa de error, códigos de respuesta |
-| Número de corridas | 5, con la primera descartada del cálculo |
+| Entorno medido | Local. Backend en contenedor Docker sobre equipo de desarrollo, corriendo el servidor de desarrollo de Flask (`python3 app.py`, `debug=True`, sin `threaded=True`) — no Gunicorn, pese a que `requirements.txt` tampoco lo incluye. La ejecución no se realizó sobre la instancia EC2 |
+| Equipo de ejecución | HP Laptop 14-cf3xxx (DESKTOP-V11ML71) · Intel Core i5-1035G1 a 1.00 GHz · 16 GB de RAM · Windows de 64 bits (dispositivo de Samuel) |
+| Métricas capturadas | `http_req_duration` (avg, min, med, max, p90, p95), tasa de error (`http_req_failed`), throughput (`http_reqs`), VUs, iteraciones completas e interrumpidas |
+| Número de corridas | 6 ejecutadas; la primera se descarta por ser de calentamiento (el contenedor recién iniciado). Se reportan las corridas 2 a 6 |
 
 ### 4.1 Qué invalidaría esta medición
 
@@ -258,95 +258,103 @@ entorno y commit específicos)*. No permite concluir nada sobre ___.
 ## 5. Síntesis de la medición
 
 **Sistema medido.** Backend UrbanFix, aplicación Flask ejecutándose en un contenedor Docker sobre
-un equipo de desarrollo local. La ejecución no se realizó sobre la instancia EC2.
+el equipo de Samuel, con el servidor de desarrollo de Werkzeug (`python3 app.py`, `debug=True`, sin
+`threaded=True`) — no Gunicorn. La ejecución no se realizó sobre la instancia EC2.
 
 **Escenario medido.** Autenticación concurrente contra el endpoint `POST /login`, en entorno
-local. Corresponde al escenario **ESC-07**, no a ESC-01.
+local, bajo una rampa de carga agresiva hasta 800 usuarios virtuales. Corresponde al escenario
+**ESC-07**, no a ESC-01.
 
-**Hipótesis previa contrastada.** El endpoint de autenticación responde por debajo del umbral
-fijado en 1500 ms para p95, con tasa de error inferior al 5%, bajo una concurrencia máxima de
-15 usuarios virtuales. El origen del umbral consta en el propio script: el comentario declara que
-1500 ms es un valor adaptado a la capacidad del portátil donde se ejecuta. No se deriva del RNF #1
-ni de un requerimiento de negocio, sino del hardware de prueba, y así debe presentarse.
+**Hipótesis previa contrastada.** El script no declara un umbral formal (`thresholds`). La
+hipótesis recuperable es la que consta en el comentario del propio código — que el sistema debería
+romperse al acercarse a 800 VUs — no un criterio de SLA con número explícito. Para poder calificar
+el resultado de forma comparable con los demás escenarios de este documento, se adopta aquí, solo
+como referencia de lectura, una tasa de error ≤ 5%; se deja explícito en cada afirmación que ese
+umbral no estaba codificado en el instrumento.
 
 **Semilla de datos.** No es aleatoria: son credenciales fijas de prueba (`test@urbanfix.com`)
-usadas por todos los usuarios virtuales. La decisión es deliberada y elimina la variabilidad entre
-corridas atribuible a datos distintos, a cambio de que el resultado pueda beneficiarse de caché al
-consultarse siempre el mismo registro. Queda pendiente el volumen de la base al medir.
+usadas por todos los usuarios virtuales. Queda pendiente el volumen de la base al momento de medir.
 
-**Instrumento.** k6. Perfil de carga en tres etapas: rampa de 5 s hasta
-5 VUs, sostenimiento de 15 s en 15 VUs y descenso de 5 s hasta 0. Duración total aproximada de
-25 s por corrida, con `sleep(0.3)` entre iteraciones. Umbrales declarados: `p(95)<1500` y
-`rate<0.05`.
+**Instrumento.** k6. Perfil de carga en cuatro etapas: rampa de 10 s hasta 50 VUs, 20 s hasta 300
+VUs, 20 s hasta 800 VUs, y descenso de 10 s hasta 0. Duración total de 60 s por corrida, con
+`sleep(0.1)` entre iteraciones. Sin umbrales declarados en el script.
 
-**Condiciones.** Equipo de ejecución: HP Laptop 14-cf3xxx (DESKTOP-V11ML71), Intel Core i5-1035G1
-a 1.00 GHz, 16 GB de RAM, Windows de 64 bits. Las pruebas se ejecutaron de forma local, por lo que
-no se realizaron sobre la instancia EC2.
+**Condiciones.** Equipo de ejecución: HP Laptop 14-cf3xxx (DESKTOP-V11ML71), Intel Core
+i5-1035G1 a 1.00 GHz, 16 GB de RAM, Windows de 64 bits (dispositivo de Samuel). Las pruebas se
+ejecutaron de forma local, por lo que no se realizaron sobre la instancia EC2.
 
-**Validación del instrumento.** Parcial. A favor: k6 evaluó ambos umbrales y ejecutó 1444 checks
-de código de respuesta, todos con resultado 200. Falta la prueba negativa: apuntar el script a un
-endpoint inexistente o a credenciales inválidas y confirmar que k6 reporta el fallo. Sin esa
-prueba no está demostrado que el instrumento sea capaz de detectar un error.
+**Validación del instrumento.** Parcial. A favor: k6 ejecutó y contabilizó 9.037 checks de
+código de respuesta a lo largo de las cinco corridas reportadas, con una mezcla real de éxitos y
+fallos (8.065 exitosos, 972 fallidos) — es decir, el instrumento demostró ser capaz de distinguir
+y contar un fallo real. Sigue faltando la prueba negativa explícita (apuntar a un endpoint
+inexistente o a credenciales inválidas) para confirmar que cada fallo detectado es atribuible al
+sistema y no a un artefacto del instrumento.
 
-**Corridas realizadas.** Cinco. Aplicando la regla de descartar la primera, se reportan las
-corridas 2 a 5, con 1122 peticiones acumuladas.
+**Corridas realizadas.** Seis en total; la primera se descarta por ser de calentamiento (el
+contenedor recién iniciado, antes de estabilizar cachés y conexiones). Se reportan las corridas 2
+a 6, con 9.037 peticiones acumuladas.
 
 **Resultado reportado.**
 
-| Métrica | Corrida 2 | Corrida 3 | Corrida 4 | Corrida 5 | Mediana |
-|---|---|---|---|---|---|
-| p95 (ms) | 1210,00 | 637,99 | 592,59 | 436,63 | **615,29** |
-| Mediana de latencia (ms) | 532,43 | 375,52 | 362,63 | 294,48 | 369,07 |
-| Throughput (req/s) | 8,55 | 11,40 | 11,65 | 12,93 | 11,53 |
-| Peticiones | 214 | 287 | 293 | 328 | — |
-| Tasa de error (%) | 0,00 | 0,00 | 0,00 | 0,00 | 0,00 |
-| Códigos 200 verificados | 100% | 100% | 100% | 100% | 100% |
+| Métrica | Corrida 2 | Corrida 3 | Corrida 4 | Corrida 5 | Corrida 6 | Mediana |
+|---|---|---|---|---|---|---|
+| Tasa de éxito (%) | 86,62 | 87,26 | 91,77 | 91,13 | 88,88 | **88,88** |
+| Tasa de error (%) | 13,37 | 12,73 | 8,22 | 8,86 | 11,11 | 11,11 |
+| p95 `http_req_duration` (s) | 31,60 | 36,47 | 31,06 | 31,02 | 30,95 | **31,06** |
+| avg `http_req_duration` (s) | 17,44 | 17,37 | 15,81 | 16,07 | 16,99 | 16,99 |
+| Peticiones (`http_reqs`) | 1.780 | 1.610 | 1.922 | 1.907 | 1.818 | — |
+| Iteraciones interrumpidas | 57 | 204 | 57 | 53 | 56 | — |
+| VUs máximos alcanzados | 800 | 800 | 800 | 800 | 800 | — |
 
-**Comparación con el criterio previo.** El p95 mediano de 615,29 ms se sitúa en el 41% del umbral
-de 1500 ms, y la tasa de error mediana de 0% cumple el criterio de menos del 5%. El escenario, tal
-como fue formulado, se cumple.
+**Comparación con el criterio de referencia adoptado.** La tasa de error mediana (11,11%)
+**excede** el umbral de referencia de 5% adoptado para poder calificar el resultado. El escenario,
+leído bajo ese criterio, **no se cumple** en ninguna de las cinco corridas reportadas (el rango de
+error va de 8,22% a 13,37%, siempre por encima de 5%). Contra el umbral de tiempo de respuesta
+usado en otro escenario de este documento (`p(95)<1500 ms`), el incumplimiento es aún mayor: el p95
+mediano de 31,06 s equivale a 20,7 veces ese umbral.
 
-Dos observaciones que matizan ese cumplimiento. Primera: la dispersión entre corridas es de 2,77
-veces, desde 436,63 ms hasta 1210,00 ms, sin causa identificada. Segunda: la regla de descartar la
-primera corrida busca eliminar efectos de calentamiento, pero aquí la corrida 1 fue la segunda más
-rápida y la lenta fue la 2. La convención se aplicó igualmente por consistencia, y se deja
-constancia de que incluir las cinco corridas habría dado un p95 mediano de 592,59 ms, es decir un
-resultado ligeramente mejor. Declararlo evita la sospecha de haber elegido la regla que favorece
-el número.
+**Qué puede afirmarse.** Bajo una rampa de carga que escala hasta 800 usuarios virtuales
+concurrentes contra `/login`, el backend UrbanFix —corriendo con el servidor de desarrollo de
+Flask, sin Gunicorn, en un contenedor Docker local— presentó una tasa de error de entre 8,22% y
+13,37% (mediana 11,11%) a lo largo de cinco corridas, con un p95 de `http_req_duration` de entre
+30,95 s y 36,47 s (mediana 31,06 s). El sistema se degrada de forma medible y consistente bajo esa
+carga.
 
-**Qué puede afirmarse.** Con 15 usuarios virtuales concurrentes autenticándose con la misma
-cuenta, el endpoint `/login` respondió correctamente en el 100% de 1444 peticiones a lo largo de
-cinco corridas, con un p95 mediano de 615,29 ms. El sistema no presentó errores ni saturación en
-ese rango de carga.
+**Qué todavía no puede afirmarse.** Varias cosas, y conviene decirlas todas:
 
-**Qué todavía no puede afirmarse.** Cuatro cosas, y conviene decirlas todas:
+Esta medición **no aísla la causa** de la degradación. Son candidatas al menos el servidor de
+desarrollo de Werkzeug (`app.run(..., debug=True)`, sin `threaded=True`), que procesa solicitudes
+de forma esencialmente secuencial, y el pool de conexiones de SQLAlchemy, configurado con sus
+valores por defecto (`pool_size=5`, `max_overflow=10`, máximo 15 conexiones). Separar cuánto
+corresponde a cada una requeriría observar CPU, memoria y el estado del pool durante la corrida,
+ninguno de los cuales se registró aquí.
 
 El diagnóstico previo sostenía que el cuello de botella del sistema es la subida concurrente de
 imágenes a S3 desde el backend. Esta medición **no lo contrasta**: `/login` no toca S3, no invoca
-a Gemini y no procesa imágenes. Afirmar que la medición de línea base valida o refuta ese diagnóstico sería una
-**INTERPRETACIÓN PREMATURA**. La razón por la que no se midió es una exclusión de alcance
-acordada con el docente y documentada en la sección 7.
+a Gemini y no procesa imágenes. Afirmar que esta medición valida o refuta ese diagnóstico sería una
+**INTERPRETACIÓN PREMATURA**. La razón por la que no se midió el flujo de creación de reportes es
+una exclusión de alcance documentada en la sección 7.
 
-No se identificó el punto de saturación. Con 0% de error y 15 VUs, la instancia no llegó a su
-límite; el dato acota un piso de capacidad, no un techo.
-
-No puede atribuirse la variación de 2,77 veces a ninguna causa concreta. Podría venir del
-servidor, de la red, de la base de datos gestionada o de la máquina generadora. Sin observación
-del servidor durante las corridas, cualquier atribución es especulación.
+Sí se identificó un indicio del punto de saturación: entre 300 y 800 VUs la tasa de error se
+dispara de forma consistente en las cinco corridas reportadas. Pero el punto exacto de quiebre —el
+VU específico donde el sistema empieza a fallar— no se midió, porque el script escala en bloques de
+250-500 VUs y no reporta métricas por escalón.
 
 No puede concluirse nada sobre el RNF #1. Los 90 s cubren el flujo completo desde la app, con
 captura de foto, geolocalización y generación de descripción; aquí solo se midió una petición HTTP
 de autenticación.
 
-**Limitaciones.** Entorno local en lugar de producción, con servidor de desarrollo en lugar de
-Gunicorn. Concurrencia baja y duración corta, 25 s. Credencial única, lo que puede beneficiarse de
-caché de consulta sobre el mismo registro. Ausencia de datos de CPU y memoria del contenedor.
-Umbral derivado de la capacidad del portátil y no de un requerimiento. Script alojado en una rama
-distinta de la entregada.
+**Limitaciones.** Entorno local en lugar de producción (EC2 `t2.micro` + Neon), con el servidor de
+desarrollo de Flask en lugar de Gunicorn — que es, de hecho, la limitación más relevante, porque el
+servidor de desarrollo es en sí mismo una causa candidata de la degradación observada, no solo una
+diferencia de entorno neutral. Credencial única, lo que puede beneficiarse de caché de consulta
+sobre el mismo registro. Ausencia de datos de CPU y memoria del contenedor durante las corridas.
+Sin umbral formal declarado en el script.
 
-**Dónde está la evidencia reproducible.** `experimentos/medicion-escenario-07/`, con el script de carga, la
-configuración, la salida cruda de las cinco corridas y las instrucciones de re-ejecución en un
-solo comando.
+**Dónde está la evidencia reproducible.** `exp/` en el repositorio backend (la rúbrica del curso la
+nombra `/experimentos`; ver nota de unificación en la sección 8), con el script de carga
+(`Pruebas/prueba2.js`). La salida cruda de las seis corridas (incluida la de calentamiento
+descartada) está pendiente de subir a esa carpeta como texto plano.
 
 ---
 
@@ -356,19 +364,17 @@ solo comando.
 
 | # | Criterio | Estado | Observación |
 |---|---|---|---|
-| 1 | Mínimo tres corridas | Cumple | Cinco corridas ejecutadas |
-| 2 | Primera corrida descartada | Cumple con salvedad | Aplicado y declarado; la corrida 1 no fue la más lenta, ver sección 1 |
-| 3 | Mediana reportada | Cumple | p95 mediano de 615,29 ms sobre las corridas 2 a 5 |
-| 4 | Códigos de respuesta verificados | Cumple | 1444 checks de estado 200, 100% exitosos |
+| 1 | Mínimo tres corridas | Cumple | Seis corridas ejecutadas, cinco reportadas |
+| 2 | Primera corrida descartada | Cumple | La corrida 1 se descarta por ser de calentamiento; muestra 493 iteraciones interrumpidas frente a 53-204 en las cinco corridas reportadas, consistente con esa lectura — ver sección 5 |
+| 3 | Mediana reportada | Cumple | Tasa de error mediana de 11,11% y p95 mediano de 31,06 s sobre las cinco corridas reportadas |
+| 4 | Códigos de respuesta verificados | Cumple con salvedad | 9.037 checks evaluados; 8.065 exitosos y 972 fallidos — el instrumento registró una mezcla real de resultados, no un 100% que impediría verificar su sensibilidad a fallos |
 | 5 | Máquina y condiciones registradas | Cumple | HP Laptop 14-cf3xxx, Intel Core i5-1035G1 a 1.00 GHz, 16 GB de RAM, Windows de 64 bits; ejecución local en contenedor Docker |
 | 6 | Volumen y distribución de semilla registrados | Parcial | Semilla definida y declarada: credenciales fijas de prueba, sin distribución aleatoria. Falta el volumen de la base al momento de medir |
-| 7 | Mismo escenario y condiciones comparables entre corridas | Parcial | El script parece idéntico, pero sin registro de condiciones no puede afirmarse |
-| 8 | Evidencia de que el instrumento funcionaba | Parcial | Umbrales y checks evaluados; falta prueba negativa |
+| 7 | Mismo escenario y condiciones comparables entre corridas | Cumple | El script es el mismo (`Pruebas/prueba2.js`, confirmado contra `main`) y el equipo de ejecución es el mismo en las cinco corridas reportadas |
+| 8 | Evidencia de que el instrumento funcionaba | Cumple con salvedad | Los 972 checks fallidos, correctamente distinguidos de los 8.065 exitosos, son evidencia indirecta de que k6 detecta fallos reales; sigue faltando una prueba negativa deliberada (endpoint inexistente o credenciales inválidas) para confirmarlo de forma directa |
 
-De ocho criterios, cinco se cumplen y tres son parciales. Los parciales se cierran así: el volumen
-de la base al momento de medir es un dato de registro; la comparabilidad entre corridas se resuelve
-documentando que el script y el equipo fueron los mismos; y la validación del instrumento requiere
-una corrida adicional, deliberadamente fallida, para demostrar que k6 detecta un error.
+De ocho criterios, cinco se cumplen sin salvedad, dos se cumplen con salvedad y uno es parcial
+(el volumen de la base al momento de medir).
 
 ---
 
@@ -381,10 +387,10 @@ consecuencia de cada caso sobre lo que el equipo puede afirmar.
 
 ### 7.1 ESC-01 tiene script ejecutable, sin resultados reportados
 
-En la rama `pruebas` existe `Pruebas/prueba1.js`, que ejerce `POST /reportes` con imagen en base64,
+En la rama `main` existe `Pruebas/prueba1.js`, que ejerce `POST /reportes` con imagen en base64,
 diez usuarios virtuales concurrentes, una iteración cada uno y un umbral de `p(95)<400`. Es decir,
 el escenario de creación concurrente de reportes sí fue instrumentado. Lo que no existe es un
-registro de resultados: el documento de salidas solo contiene las cinco corridas de autenticación.
+registro de resultados: el documento de salidas solo contiene las seis corridas de autenticación.
 
 Dos caminos posibles, y conviene elegir uno de forma explícita:
 
@@ -431,18 +437,17 @@ nombre antes de la entrega.
 
 | Material | Clasificación | Destino y razón |
 |---|---|---|
-| `PRUEBAS_DE_CARGA_K6.docx` — salidas de las 5 corridas | EXPERIMENTO | Salida cruda del instrumento. Debe versionarse como texto plano dentro de `exp/`, sin reformatear |
-| `Pruebas/prueba2.js` — script de autenticación | EXPERIMENTO | Vive hoy en la rama `pruebas`. Es el artefacto que permite re-ejecutar la medición reportada |
+| Salida cruda de las 6 corridas (texto plano, pendiente de subir) | EXPERIMENTO | Debe versionarse dentro de `exp/`, sin reformatear — hoy `exp/` solo contiene un archivo de marcador (`test.txt`) |
+| `Pruebas/prueba2.js` — script de autenticación | EXPERIMENTO | Vive hoy en la rama `main`. Es el artefacto que permite re-ejecutar la medición reportada |
 | `Pruebas/prueba1.js` — script de creación de reportes | EXPERIMENTO | Instrumenta ESC-01. Sin resultados publicados, ver sección 7.1 |
-| Perfil de carga en tres etapas y umbrales | DOSSIER | Sección 4 de este documento |
+| Perfil de carga en cuatro etapas | DOSSIER | Sección 4 de este documento |
 | Cifras de p95, mediana, throughput y errores | DOSSIER | Sección 5 de este documento |
-| Estimación previa de "250-300 peticiones totales" | NO APORTA EVIDENCIA | Cálculo hecho antes de ejecutar. El dato real, de 214 a 328 peticiones por corrida, proviene del instrumento |
 
 ### 8.1 Tabla de trazabilidad
 
 | Driver (doc 01) | Atributo (doc 03) | Escenario | Estado | Resultado |
 |---|---|---|---|---|
-| Acceso de ciudadanos al servicio de reporte | Rendimiento | ESC-07 — autenticación concurrente | Medido en entorno local | p95 mediano 615,29 ms, 0% de error, 15 VUs |
+| Acceso de ciudadanos al servicio de reporte | Rendimiento | ESC-07 — autenticación concurrente bajo escalado agresivo | Medido en entorno local | p95 mediano 31,06 s, tasa de error mediana 11,11% (sobre 5 corridas, tras descartar 1 de calentamiento), hasta 800 VUs. Causa candidata: servidor de desarrollo de Flask sin concurrencia real |
 | RNF #1 — reporte en menos de 90 s | Rendimiento | ESC-01 — creación concurrente con imagen | Instrumentado, sin resultados publicados | Ver sección 7.1 |
 | Punto único de falla en EC2 | Disponibilidad | ESC-02 — caída del backend | Descartado para esta entrega | No aplica al montaje local |
 | Ley 1581/2012 | Seguridad | ESC-04 — acceso anónimo a S3 | Sin ejecutar | Hipótesis |
@@ -457,9 +462,9 @@ nombre antes de la entrega.
 |---|---|
 | ¿Qué herramienta se usó? | Claude (Anthropic), en sesión de apoyo y orientación del 20 de agosto de 2026 |
 | ¿Para qué se usó? | Obtener guía y retroalimentación para la estructuración de escenarios en formato de seis partes, solicitar recomendaciones para abordar la sección de amenazas a la validez, orientar el método de cálculo de medianas a partir de las salidas de k6, y recibir sugerencias sobre el esquema del documento y puntos clave a inspeccionar en el repositorio para contrastar con el código. |
-| ¿Qué se aceptó? | La propuesta de estructura para el formato de seis partes; la orientación sugerida para la sección "qué invalidaría esta medición"; la recomendación metodológica de descartar la primera corrida y reportar la mediana; la validación del procedimiento de cálculo de la mediana de p95 en 615,29 ms; y los borradores orientativos para los escenarios ESC-02, ESC-03 y ESC-05, sujetos a la corrección registrada en la sección 3. |
+| ¿Qué se aceptó? | La propuesta de estructura para el formato de seis partes; la orientación sugerida para la sección "qué invalidaría esta medición"; la recomendación metodológica de reportar la mediana junto al rango completo; y los borradores orientativos para los escenarios ESC-02, ESC-03 y ESC-05, sujetos a la corrección registrada en la sección 3. |
 | ¿Qué se modificó? | Se corrigió la sugerencia inicial de marcar la semilla como pendiente: el equipo precisó que se trata de credenciales fijas de prueba elegidas deliberadamente, incorporando esa precisión y su efecto sobre la validez. Asimismo, se ajustó la orientación sobre el entorno del escenario ESC-07, el cual Claude había supuesto en la instancia EC2, cuando la revisión directa del equipo sobre el script confirmó que apuntaba a un contenedor local. |
-| ¿Qué se rechazó? | La sugerencia de argumentación que la IA había propuesto para excluir la medición de creación de reportes, una vez que el análisis del equipo sobre el código la desmintió. Se rechazó también la propuesta de nomenclatura de carpeta `EXP-001` sugerida por la IA, en favor de `medicion-escenario-07`, que es la exigida por la rúbrica. |
+| ¿Qué se rechazó? | La sugerencia de argumentación que la IA había propuesto para excluir la medición de creación de reportes, una vez que el análisis del equipo sobre el código la desmintió. Se rechazó también la propuesta de nomenclatura de carpeta `EXP-001` sugerida por la IA, en favor de `exp/`, que es la que realmente existe en el repositorio backend. |
 | ¿Qué supuesto de IA fue problemático? | El más grave: Claude sugirió y fundamentó en su orientación, como si fuera una restricción arquitectónica, que el flujo de creación de reportes invoca la API de Gemini y que medirlo bajo carga expondría al proyecto a un bloqueo del servicio externo. La inspección del equipo en `app/routes.py` y `app/utils.py` demostró que el backend no contiene ninguna referencia a Gemini ni realiza llamadas HTTP salientes (la generación ocurre en el cliente Android). Claude había construido una recomendación técnicamente coherente sobre una premisa falsa. Un segundo supuesto: Claude orientó el análisis asumiendo que la medición ocurría en la instancia EC2, cuando se ejecutó contra un contenedor local con el servidor de desarrollo de Flask. |
-| ¿Cómo se verificó? | Ejecución real de k6 realizada por el equipo, con cinco corridas registradas y métricas leídas del resumen del instrumento. Inspección manual del repositorio: `app/routes.py`, `app/utils.py`, `app.py`, `dockerfile`, `requirements.txt`, y los scripts `Pruebas/prueba1.js` y `Pruebas/prueba2.js` de la rama `pruebas`. La URL base del script y el comentario sobre el umbral confirmaron el entorno y el origen de los 1500 ms. |
-| ¿Qué riesgo permanece? | La hipótesis del cuello de botella en la subida de imágenes sigue sin contrastar con resultados publicados. El resultado disponible describe un contenedor local con servidor de desarrollo, no la configuración de producción, y por tanto no acota la capacidad real del sistema. Persiste además la dispersión de 2,77 veces entre corridas sin causa identificada, por ausencia de métricas del lado servidor. |
+| ¿Cómo se verificó? | Ejecución real de k6 realizada por el equipo (seis corridas, cinco reportadas tras descartar la de calentamiento) y métricas leídas del resumen del instrumento. Inspección manual del repositorio: `app/routes.py`, `app/utils.py`, `app.py`, `dockerfile`, `requirements.txt`, y los scripts `Pruebas/prueba1.js` y `Pruebas/prueba2.js` de la rama `main`. La URL base y el perfil de carga del script confirmaron el entorno y la ausencia de un umbral declarado. |
+| ¿Qué riesgo permanece? | La hipótesis del cuello de botella en la subida de imágenes sigue sin contrastar con resultados publicados. El resultado disponible describe un contenedor local con servidor de desarrollo, no la configuración de producción, y por tanto no acota la capacidad real del sistema. Persiste además, sin causa identificada, la anomalía de la corrida 1 (493 iteraciones interrumpidas frente a 53-204 en las demás), por ausencia de métricas del lado servidor durante las corridas. |
