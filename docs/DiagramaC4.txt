@@ -1,0 +1,123 @@
+workspace "UrbanFix" "Sistema de reportes de daños de infraestructura ciudadana" {
+
+    model {
+        usuarioCivil = person "Usuario Civil" "Ciudadano que reporta daños en la infraestructura pública" "Persona"
+        funcionario = person "Funcionario" "Empleado público que gestiona y da seguimiento a los reportes" "Persona"
+
+        mapBox = softwareSystem "MapBox API" "Servicio externo de mapas y geolocalización" "Externo"
+        gemini = softwareSystem "Gemini API" "Servicio externo de IA generativa" "Externo"
+
+        sistemaReportes = softwareSystem "Sistema de Reportes de Daños" "Permite registrar, consultar y gestionar reportes de daños en la infraestructura ciudadana" {
+
+            appMovil = container "App Móvil" "Permite a usuarios civiles y funcionarios reportar y consultar daños" "Mobile App" {
+                screens = component "Screens" "Pantallas de la interfaz"
+                navigation = component "Navigation" "Gestión de navegación entre pantallas"
+                viewModel = component "ViewModel" "Maneja el estado y lógica de datos para las Screens"
+                services = component "Services" "Gestiona la conexión con Gemini"
+                network = component "Network" "Gestiona la comunicación con el Backend (API REST)"
+                data = component "Data" "Persistencia de datos local"
+
+                screens -> navigation "Navega entre"
+                screens -> viewModel "Usa"
+                viewModel -> data "Lee y escribe"
+                viewModel -> network "Usa"
+                viewModel -> services "Usa"
+            }
+
+            backend = container "Backend API" "Expone API REST, contiene la lógica de negocio del sistema" "Flask - Docker" {
+                login = component "POST /login" "Valida credenciales y retorna rol (Usuario/Funcionario)" "Autenticación"
+                postUsuarios = component "POST /usuarios" "Registra nuevas cuentas" "Usuarios"
+                getUsuarios = component "GET /usuarios" "Lista usuarios registrados" "Usuarios"
+                postReportes = component "POST /reportes" "Crea denuncias con geolocalización e imágenes" "Reportes"
+                getReportes = component "GET /reportes" "Lista reportes (incluye conteo de apoyos y estado)" "Reportes"
+                postApoyos = component "POST /apoyos" "Registra reacciones (like/dislike) a los reportes" "Interacciones"
+                postComentarios = component "POST /comentarios" "Añade actualizaciones o notas a un reporte" "Interacciones"
+                getCategorias = component "GET /categorias" "Retorna tipos de daños (ej. Malla Vial)" "Catálogos"
+                getEntidades = component "GET /entidades_publicas" "Retorna entidades responsables" "Catálogos"
+            }
+
+            baseDatos = container "Base de Datos" "Almacena usuarios, reportes y datos del sistema" "PostgreSQL" {
+                tags "Database"
+            }
+        }
+
+        # Relaciones - Nivel 1 (Contexto)
+        usuarioCivil -> sistemaReportes "Envía y consulta reportes" "HTTP"
+        funcionario -> sistemaReportes "Gestiona reportes" "HTTP"
+        sistemaReportes -> mapBox "Obtiene geolocalización" "HTTP/API"
+        sistemaReportes -> gemini "Envía datos para análisis" "HTTP/API"
+
+        # Relaciones - Nivel 2 (Contenedores)
+        usuarioCivil -> appMovil "Usa"
+        funcionario -> appMovil "Usa"
+        appMovil -> backend "Consume" "API REST/HTTPS"
+        backend -> baseDatos "Lee y escribe datos" "SQL/TCP 5432"
+
+        # Relaciones - Nivel 3 (Componentes)
+        network -> backend "Consume" "API REST/HTTPS"
+        services -> gemini "Envía datos para análisis" "HTTP/API"
+
+        login -> baseDatos "Lee y escribe" "SQL"
+        postUsuarios -> baseDatos "Lee y escribe" "SQL"
+        getUsuarios -> baseDatos "Lee" "SQL"
+        postReportes -> baseDatos "Lee y escribe" "SQL"
+        getReportes -> baseDatos "Lee" "SQL"
+        postApoyos -> baseDatos "Lee y escribe" "SQL"
+        postComentarios -> baseDatos "Lee y escribe" "SQL"
+        getCategorias -> baseDatos "Lee" "SQL"
+        getEntidades -> baseDatos "Lee" "SQL"
+    }
+
+    views {
+        systemContext sistemaReportes "Nivel1-Contexto" {
+            include *
+            autoLayout
+            description "Diagrama de Contexto del Sistema UrbanFix"
+        }
+
+        container sistemaReportes "Nivel2-Contenedores" {
+            include *
+            autoLayout
+            description "Diagrama de Contenedores de UrbanFix"
+        }
+
+        component backend "Nivel3-Backend" {
+            include *
+            autoLayout
+            description "Componentes del Backend (Flask)"
+        }
+
+        component appMovil "Nivel3-AppMovil" {
+            include *
+            autoLayout
+            description "Componentes de la App Móvil"
+        }
+
+        styles {
+            element "Persona" {
+                background #08427b
+                color #ffffff
+                shape Person
+            }
+            element "Externo" {
+                background #999999
+                color #ffffff
+            }
+            element "Software System" {
+                background #1168bd
+                color #ffffff
+            }
+            element "Container" {
+                background #438dd5
+                color #ffffff
+            }
+            element "Database" {
+                shape Cylinder
+            }
+            element "Component" {
+                background #85bbf0
+                color #000000
+            }
+        }
+    }
+}

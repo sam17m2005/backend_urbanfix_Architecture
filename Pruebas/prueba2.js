@@ -2,21 +2,18 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 
 export const options = {
+  // Aquí está la magia para romperla: escalado agresivo
   stages: [
-    { duration: '5s', target: 5 },   // Subida suave a 5 VUs
-    { duration: '15s', target: 15 }, // Carga sostenida en 15 VUs
-    { duration: '5s', target: 0 },   // Bajada
+    { duration: '10s', target: 50 },   // Calentamiento: sube a 50 usuarios rápido
+    { duration: '20s', target: 300 },  // Golpe fuerte: sube a 300 usuarios concurrentes
+    { duration: '20s', target: 800 },  // El martillazo: sube a 800 usuarios (aquí debería romperse)
+    { duration: '10s', target: 0 },    // Caída rápida
   ],
-  thresholds: {
-    http_req_failed: ['rate<0.05'],     // Fallos menores al 5%
-    http_req_duration: ['p(95)<1500'],  // Umbral de 1.5s adaptado al portátil
-  },
 };
 
-// En Linux suele ser la IP local o el gateway de docker
-const BASE_URL = 'http://host.docker.internal:5000';
-
 export default function () {
+  const url = 'http://172.18.0.1:5000/login'; // Verifica que sea la IP correcta de tu Docker
+  
   const payload = JSON.stringify({
     email: 'test@urbanfix.com',
     contrasena: 'PasswordSeguro123!'
@@ -28,11 +25,12 @@ export default function () {
     },
   };
 
-  const res = http.post(`${BASE_URL}/login`, payload, params);
+  const res = http.post(url, payload, params);
 
   check(res, {
     'Status 200 (Login Exitoso)': (r) => r.status === 200,
   });
 
-  sleep(0.3); // Pausa para no ahogar la CPU
+  // Un sleep muy corto para que ataquen constantemente
+  sleep(0.1); 
 }
