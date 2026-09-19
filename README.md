@@ -41,6 +41,7 @@ Es decir: **el flujo con EC2 + GitHub Actions no ha sido eliminado del repositor
     Crea un archivo llamado `.env` en la raíz del proyecto. Este archivo **no** se sube a Git. Usa esta plantilla basada en `config.py`:
     ```ini
     # --- Base de Datos (NEON) ---
+    # Solo se usan si NO existe DATABASE_URL (ver nota más abajo).
     PGHOST="[Tu Host de Neon]"
     PGUSER="[Tu Usuario de Neon]"
     PGPASSWORD="[Tu Contraseña de Neon]"
@@ -53,21 +54,23 @@ Es decir: **el flujo con EC2 + GitHub Actions no ha sido eliminado del repositor
     S3_PERFILES="urbanfixperfilimagenesbucket"
     ```
 
-3. **Construye la imagen Docker:**
+    > **Nota sobre la base de datos:** `config.py` usa `DATABASE_URL` si existe, y solo si no existe cae a las variables `PGHOST`/`PGUSER`/`PGPASSWORD`/`PGDATABASE` (Neon). Al levantar el proyecto con `docker compose` (paso 3), `DATABASE_URL` ya viene definida en `docker-compose.yml` apuntando a la base de datos local del propio `docker compose`, así que las variables de Neon en el `.env` no son necesarias para este flujo — solo hacen falta las de AWS S3.
+
+3. **Levanta los servicios con Docker Compose:**
     ```bash
-    docker build -t urbanfix-backend .
+    docker compose up -d --build backend
     ```
+    Este comando construye la imagen del backend y, al estar `backend` declarado con `depends_on: [db]` en `docker-compose.yml`, también levanta automáticamente el servicio `db` (PostgreSQL 16 local, contenedor `urbanfixdb`). Ambos quedan conectados entre sí en la red que crea Docker Compose, sin que tengas que configurar nada manualmente.
 
-4. **Corre el contenedor:**
-    ```bash
-    docker run -p 5000:5000 --env-file .env urbanfix-backend
-    ```
+    El servidor estará disponible en `http://127.0.0.1:5000/` y la base de datos en el puerto `5432` de tu máquina.
 
-    El servidor estará disponible en `http://127.0.0.1:5000/`.
+    Para ver los logs: `docker compose logs -f backend`. Para detener todo: `docker compose down`.
 
-> **Nota:** Las migraciones de base de datos (`flask db upgrade`) deben ejecutarse contra la base de datos de Neon configurada en el `.env`. Si necesitas correrlas manualmente dentro del contenedor, puedes hacerlo con:
+    > **Alternativa (sin Postgres local):** si prefieres correr solo el backend contra tu base de datos de Neon (sin levantar el servicio `db`), puedes seguir usando `docker build -t urbanfix-backend .` seguido de `docker run -p 5000:5000 --env-file .env urbanfix-backend`. En ese caso sí necesitas completar las variables de Neon en el `.env`.
+
+> **Nota:** Las migraciones de base de datos (`flask db upgrade`) deben ejecutarse dentro del contenedor del backend, contra la base de datos que esté activa según `DATABASE_URL` (local, si usaste `docker compose`) o contra Neon (si usaste el flujo alternativo). Con Docker Compose:
 > ```bash
-> docker exec -it <container_id> flask db upgrade
+> docker compose exec backend flask db upgrade
 > ```
 
 ---
@@ -109,6 +112,26 @@ Si prefieres no usar Docker, también puedes correr el proyecto de forma tradici
     flask run --debug
     ```
     El servidor estará disponible en `http://127.0.0.1:5000/`.
+
+---
+
+## Pruebas de carga (k6)
+
+El repositorio incluye dos scripts de carga en `Pruebas/` (`prueba1.js` para `POST /reportes`, `prueba2.js` para `POST /login`). No hace falta instalar k6: se ejecutan con la imagen oficial de Docker, pasándole el script por entrada estándar.
+
+Con el backend ya corriendo (ver [Configuración para Desarrollo Local](#configuración-para-desarrollo-local)):
+
+```powershell
+# Windows (PowerShell)
+Get-Content Pruebas\prueba2.js | docker run --rm -i grafana/k6 run -
+```
+
+```bash
+# macOS/Linux
+docker run --rm -i grafana/k6 run - < Pruebas/prueba2.js
+```
+
+> **Nota:** `prueba2.js` apunta al endpoint fijo `http://172.18.0.1:5000/login` (la IP de gateway de la red bridge por defecto de `docker run`). Si el backend se levantó con `docker compose` en lugar de `docker run` suelto, esa IP puede no ser la del gateway correcto — verifícala antes de correr la prueba, o ajusta la URL en el script.
 
 ---
 
