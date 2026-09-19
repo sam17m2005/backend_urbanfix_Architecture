@@ -2,7 +2,7 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 
 export const options = {
-  // Aquí está la magia para romperla: escalado agresivo
+  
   stages: [
     { duration: '10s', target: 50 },   // Calentamiento: sube a 50 usuarios rápido
     { duration: '20s', target: 300 },  // Golpe fuerte: sube a 300 usuarios concurrentes
@@ -12,7 +12,7 @@ export const options = {
 };
 
 export default function () {
-  const url = 'http://172.18.0.1:5000/login'; // Verifica que sea la IP correcta de tu Docker
+  const url = 'http://172.18.0.1:5000/login'; 
   
   const payload = JSON.stringify({
     email: 'test@urbanfix.com',
