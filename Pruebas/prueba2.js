@@ -4,10 +4,10 @@ import { check, sleep } from 'k6';
 export const options = {
   
   stages: [
-    { duration: '10s', target: 50 },   // Calentamiento: sube a 50 usuarios rápido
-    { duration: '20s', target: 300 },  // Golpe fuerte: sube a 300 usuarios concurrentes
-    { duration: '20s', target: 800 },  // El martillazo: sube a 800 usuarios (aquí debería romperse)
-    { duration: '10s', target: 0 },    // Caída rápida
+    { duration: '10s', target: 50 },   
+    { duration: '20s', target: 300 },  
+    { duration: '20s', target: 800 },  
+    { duration: '10s', target: 0 },    
   ],
 };
 
