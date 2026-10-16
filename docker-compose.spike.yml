@@ -1,0 +1,27 @@
+# Spike 01 - se SUPERPONE al docker-compose.yml, que queda intacto.
+#   Baseline: docker compose up -d --build
+#   Spike:    docker compose -f docker-compose.yml -f docker-compose.spike.yml up -d --build
+services:
+  pgbouncer:
+    image: edoburu/pgbouncer:latest   # el digest exacto se registra con condiciones.ps1
+    container_name: urbanfixpgbouncer
+    restart: always
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: urbanfix
+      POOL_MODE: transaction
+      DEFAULT_POOL_SIZE: "15"
+      MAX_CLIENT_CONN: "1000"
+      AUTH_TYPE: scram-sha-256
+    depends_on:
+      - db
+
+  backend:
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@pgbouncer:5432/urbanfix
+      DB_POOL_MODE: "null"
+    depends_on:
+      - pgbouncer

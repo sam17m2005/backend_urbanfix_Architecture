@@ -21,6 +21,12 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = { "pool_pre_ping": True }
 
+    # --- Spike 01: el pool lo gestiona PgBouncer, no SQLAlchemy ---
+    # Sin la variable DB_POOL_MODE el comportamiento es identico al anterior.
+    if os.getenv('DB_POOL_MODE') == 'null':
+        from sqlalchemy.pool import NullPool
+        SQLALCHEMY_ENGINE_OPTIONS = { "pool_pre_ping": True, "poolclass": NullPool }
+
     # --- AWS Config ---
     AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
     AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
