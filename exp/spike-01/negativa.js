@@ -1,6 +1,4 @@
 // Prueba negativa del instrumento (pre-registro, seccion 7).
-// Resultado esperado: k6 debe REPORTAR FALLOS (check 'Status 200' fallando al 100 %).
-// Si reporta 100 % de exito, el instrumento no detecta fallos y la medicion no es confiable.
 import http from 'k6/http';
 import { check } from 'k6';
 
