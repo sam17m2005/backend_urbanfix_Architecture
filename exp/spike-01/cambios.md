@@ -20,7 +20,7 @@
 | `exp/spike-01/01-guia-ejecucion.md` | Pasos de ejecución. |
 
 ## No modificado (declaración de no-modificación del pre-registro §6)
-`app/` (routes, models, utils), `migrations/`, `Pruebas/prueba2.js`, `docker-compose.yml`, `dockerfile`, el servidor (sigue `python3 app.py`, `debug=True`), el algoritmo de hash y los ADR.
+`app/` (routes, models, utils), `migrations/`, `docker-compose.yml`, `dockerfile`, el servidor (sigue `python3 app.py`, `debug=True`), el algoritmo de hash y los ADR.
 
 ## Desviaciones respecto al pre-registro (declaradas)
 1. **Carpeta:** los artefactos del spike van en `exp/spike-01/` (la carpeta que ya existe y donde quedó el pre-registro), no en `experimentos/spike-01/`.
@@ -28,6 +28,7 @@
 3. **Compose:** en lugar de editar `docker-compose.yml`, el servicio nuevo está en `docker-compose.spike.yml`; ambos brazos corren desde la misma rama y se diferencian solo por ese archivo.
 4. **Muestreo:** `docker stats` tarda ~1–2 s por llamada, así que el muestreo es cada ~2–3 s y no cada 1 s. Aplica igual a ambos brazos.
 5. **Imagen de PgBouncer:** se usa `edoburu/pgbouncer:latest` y se registra el digest exacto con `condiciones.ps1` (reproducible por digest).
+6. **URL de k6:** `172.18.0.1` no es alcanzable desde Windows con Docker Desktop (las corridas iniciales fallaron por timeout de conexión y se descartaron). `Pruebas/prueba2.js` y `negativa.js` apuntan a `127.0.0.1:5000` en ambos brazos; el cambio se hizo antes de las corridas válidas. Los números de la línea base anterior (~31 s) son solo referencia: la comparación válida es baseline vs. spike medidos aquí.
 
 ## Lo no verificado al preparar la rama
 - El compose y los scripts no se ejecutaron en Docker/k6 reales durante la preparación (el entorno de preparación no tenía Docker). Lo que sí se probó: la lógica de `config.py` y el cálculo de `resumir.py` con datos sintéticos.

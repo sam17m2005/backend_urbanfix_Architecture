@@ -1,0 +1,22 @@
+brazo: spike
+fecha: 2026-10-16T19:32:17
+rama: spike/01-pgbouncer-login
+commit: 9df270cba4c6c356796e11f549d0d8facd8ee4e6
+k6: k6.exe v2.2.0 (commit/00a9a1b7f5, go1.26.5, windows/amd64)
+docker: Docker version 29.7.2, build a7dcaa6
+imagenes:
+
+backend_urbanfix_architecture-backend:latest sha256:98cbd7b6dd63f4a928991028aa3d3e5d99bc0096fdafeef8472db40bbb46a46c
+edoburu/pgbouncer:latest sha256:9c78945868a6a142c7fc40ccd843bbe5a606df163c7ffce4de70e0d628d696a2
+urbanfix-backend:latest sha256:ec0a6f75e354ad5083615be68ed924ea1f95c783809d07afc9f4d18b4014a579
+postgres:16-alpine sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
+filas:
+ usuarios | reportes | funcionarios 
+----------+----------+--------------
+        1 |       10 |            0
+(1 row)
+
+prefijo hash usuario de prueba (solo algoritmo):
+scrypt:32768:8:1
+
+

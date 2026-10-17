@@ -1,12 +1,12 @@
 brazo: baseline
-fecha: 2026-10-16T18:41:52
+fecha: 2026-10-16T19:14:13
 rama: spike/01-pgbouncer-login
-commit: 93934f37c717ec361f8b6332a79eae79d2ee9f18
+commit: af01216ddd7175cc9c9dc8d34c82fd3535832587
 k6: k6.exe v2.2.0 (commit/00a9a1b7f5, go1.26.5, windows/amd64)
 docker: Docker version 29.7.2, build a7dcaa6
 imagenes:
 
-backend_urbanfix_architecture-backend:latest sha256:18b94aa3c71c9a067da96a341d19f3152b6de9d197ac936377d6ae5fde212cee
+backend_urbanfix_architecture-backend:latest sha256:c9c6f5fd669e3554df5b0e0a01f90d660bab3d24bae5d9b839cefe0fe0bc09b1
 urbanfix-backend:latest sha256:ec0a6f75e354ad5083615be68ed924ea1f95c783809d07afc9f4d18b4014a579
 postgres:16-alpine sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
 filas:
