@@ -1,0 +1,37 @@
+name: Fitness function (arquitectura)
+
+# Ejecuta la regla automatizada que protege los ADR 0001 y 0003.
+# Si alguien viola la regla, este workflow falla (X roja) en el push o en el pull request.
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  fitness-function:
+    runs-on: ubuntu-latest
+    steps:
+      # El repositorio incluye la carpeta data/ de Postgres: se descarga solo lo que la regla necesita.
+      - name: Descargar solo el codigo a analizar
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            /app/
+            /tests/
+            /app.py
+            /config.py
+            /requirements.txt
+          sparse-checkout-cone-mode: false
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Instalar pytest
+        run: pip install pytest
+
+      - name: Ejecutar la fitness function
+        run: pytest tests/architecture -v
