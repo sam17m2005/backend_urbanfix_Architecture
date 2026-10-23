@@ -99,7 +99,3 @@ Esta matriz relaciona cada escenario de la [matriz de fallos](./matriz-fallos.md
 | Código afectado | `config.py` · `app/__init__.py` · `app/utils.py` · `app/routes.py` · `app/models.py` · `docker-compose.yml` · `app.py` |
 
 ---
-
-## 5. Declaración de uso de IA
-
-Claude (Anthropic) propuso las tácticas y los umbrales iniciales. También redactó las pruebas de verificación a partir del código. Las cifras de R-01 y R-19 provienen íntegramente del experimento del equipo. La selección de tácticas, los umbrales y la priorización deben ser ratificados por el equipo antes de ejecutar cualquier prueba.

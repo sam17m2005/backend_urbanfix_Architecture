@@ -113,6 +113,3 @@ No se usaron buckets ni bases de datos reales.
 
 ---
 
-## 5. Declaración de uso de IA
-
-Claude (Anthropic) revisó la documentación y el código de ambos repositorios para la proposición de escenarios de fallo. Las clasificaciones de evidencia distinguen lo medido por el equipo de lo deducido por inspección. La revisión, la priorización y la aceptación final de cada fila corresponden al equipo.
