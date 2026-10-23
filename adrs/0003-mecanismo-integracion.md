@@ -158,4 +158,3 @@ El borrador previo de este ADR se descartó y se rehízo por estas razones:
 - Fijaba un umbral de revisión de 1.500 ms de p95 sin ningún dato que lo sustente.
 - Se conserva de ese borrador la idea central (integración síncrona, sin broker) y la estructura de alternativas y consecuencias.
 
-**Uso de IA:** Claude (Anthropic) ayudó a revisar el repositorio, contrastar los documentos previos con los resultados del spike y redactar este ADR. La decisión, las condiciones de revisión y la aceptación del estado son del equipo.
