@@ -1,0 +1,29 @@
+fecha: 2026-10-23T12:26:52
+rama: main
+commit: dc29ec9714a2c6ccd3401cacf06bd2c66ee57da3
+cambios sin commitear (debe estar vacio):
+cpu: Intel(R) Core(TM) i5-1035G1 CPU @ 1.00GHz
+nucleos fisicos: 4
+procesadores logicos: 8
+ram_gb: 15.7
+plan de energia: GUID de plan de energ?a: 381b4222-f694-41f0-9685-ff5bb260df2e  (Equilibrado)
+k6: k6.exe v2.2.0 (commit/00a9a1b7f5, go1.26.5, windows/amd64)
+docker: Docker version 29.7.2, build a7dcaa6
+imagenes:
+
+backend_urbanfix_architecture-backend:latest sha256:50963ef24e04e50bc1b1ed6153333f0f4cdee1128d1590f3bd8644c6e7db64d9
+urbanfix-backend:latest sha256:ec0a6f75e354ad5083615be68ed924ea1f95c783809d07afc9f4d18b4014a579
+postgres:16-alpine sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
+contenedores en ejecucion:
+urbanfixbackend backend_urbanfix_architecture-backend
+urbanfixdb postgres:16-alpine
+filas:
+ usuarios | reportes | funcionarios 
+----------+----------+--------------
+        1 |       10 |            0
+(1 row)
+
+prefijo hash usuario de prueba (solo algoritmo):
+scrypt:32768:8:1
+
+
