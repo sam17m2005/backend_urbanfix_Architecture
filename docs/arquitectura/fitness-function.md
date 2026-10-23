@@ -104,4 +104,3 @@ La rama `fitness/violacion-demo` se conserva sin mezclar como evidencia; no debe
 | Configuración de CI | `.github/workflows/fitness-function.yml` |
 | Decisiones protegidas | `adrs/0001-decision-estilo.md` · `adrs/0003-mecanismo-integracion.md` |
 
-**Uso de IA:** Claude (Anthropic) ayudó a diseñar y escribir la regla, el workflow y este documento, y a verificar localmente que detecta las violaciones de la sección 4.1. La demostración en CI (4.2) la ejecuta el equipo.
