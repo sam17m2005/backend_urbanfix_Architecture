@@ -1,6 +1,6 @@
 # Experimento E3 — Medición de una táctica: pool de conexiones externo (PgBouncer) bajo carga en `/login`
 
-**Entregable:** E3 · Medición del efecto de una táctica antes y después de aplicarla
+**Entregable:** resumen del Spike 01 (insumo del [ADR 0003](../adrs/0003-mecanismo-integracion.md)). El entregable E3 es el [experimento de crecimiento](./crecimiento.md)
 **Autores:** Johan Felipe Aguilar Castillo · Samuel Alejandro González Grajales · Juan David Barragán
 **Fecha de la medición:** 2026-10-16 · **Fecha del informe:** 2026-10-22
 **Evidencia cruda:** rama `spike/01-pgbouncer-login`, carpeta `exp/spike-01/` (este informe la resume; no la reemplaza). En `main` la carpeta de experimentos se llama `experimentos/`; la rama del spike conserva la ruta `exp/spike-01/` con la que se ejecutó (se creó antes del renombre).
