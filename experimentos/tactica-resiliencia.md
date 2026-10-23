@@ -115,4 +115,3 @@ El CPU se lee de `docker stats`, donde 100 % equivale a un núcleo.
 | Veredicto y decisión | rama `spike/01-pgbouncer-login`: `exp/spike-01/veredicto.md` |
 | Decisión que usa este experimento | `adrs/0003-mecanismo-integracion.md` |
 
-**Uso de IA:** Claude (Anthropic) ayudó a diseñar el protocolo, procesar los resultados y redactar este informe. Las mediciones las ejecutó el equipo; el veredicto sigue la regla pre-registrada.
