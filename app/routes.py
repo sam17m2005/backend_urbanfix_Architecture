@@ -1,3 +1,4 @@
+import pika
 from flask import Blueprint, request, jsonify
 from sqlalchemy.exc import IntegrityError
 from .models import Usuario, Reporte, Comentario, Funcionario, EstadoReporte, EntidadPublica, Zona, Apoyo, Categoria
