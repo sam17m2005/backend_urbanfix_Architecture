@@ -13,7 +13,8 @@ jobs:
   fitness-function:
     runs-on: ubuntu-latest
     steps:
-      # El repositorio incluye la carpeta data/ de Postgres: se descarga solo lo que la regla necesita.
+      # El repositorio incluye la carpeta data/ de Postgres: se descarga solo lo que las reglas necesitan
+      # (FF-05 consulta el indice de Git para saber si data/ esta versionada, y lee .gitignore).
       - name: Descargar solo el codigo a analizar
         uses: actions/checkout@v4
         with:
@@ -23,6 +24,7 @@ jobs:
             /app.py
             /config.py
             /requirements.txt
+            /.gitignore
           sparse-checkout-cone-mode: false
 
       - name: Instalar Python

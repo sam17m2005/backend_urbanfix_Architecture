@@ -96,11 +96,18 @@ La rama `fitness/violacion-demo` se conserva sin mezclar como evidencia; no debe
 - Si se agrega o cambia una decisión protegida, se actualiza la lista de paquetes de la regla y este documento junto con el ADR correspondiente.
 - Si se reorganiza `app/`, la prueba de éxito vacuo falla a propósito para obligar a revisar la regla.
 
-## 6. Trazabilidad
+## 6. FF-03, FF-04 y FF-05 (ADR 0005): definidas, pendientes
+
+El [ADR 0005](../../adrs/0005-politica-seguridad-observabilidad.md) agrega tres reglas en `tests/architecture/test_fitness_seguridad_observabilidad.py`: FF-03 (toda ruta fuera de la lista blanca exige autenticación), FF-04 (sin `print(` en `app/`) y FF-05 (`debug=True` desactivado y `data/` no versionada).
+
+**Están pendientes**: hoy detectan violaciones reales de `main`, por lo que se marcaron como fallo esperado estricto (`xfail`, `strict=True`, solo ante un `AssertionError`) y el CI sigue en verde. Se comprobó que, al corregirse el código, las tres pasan a `XPASS(strict)` y **hacen fallar el CI** hasta que se quite la marca. Los detectores se prueban siempre con código sintético, sin marca.
+
+## 7. Trazabilidad
 
 | Elemento | Ubicación |
 |---|---|
 | Regla ejecutable | `tests/architecture/test_fitness_function.py` |
+| Reglas pendientes FF-03 a FF-05 | `tests/architecture/test_fitness_seguridad_observabilidad.py` |
 | Configuración de CI | `.github/workflows/fitness-function.yml` |
 | Decisiones protegidas | `adrs/0001-decision-estilo.md` · `adrs/0003-mecanismo-integracion.md` |
 
