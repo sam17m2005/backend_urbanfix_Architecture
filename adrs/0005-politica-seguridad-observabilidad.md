@@ -109,3 +109,4 @@ La regla S-1 describe la validación del token en `before_request`; FF-03 exige 
 | Plan de observabilidad y su prueba de concepto | `docs/arquitectura/plan-observabilidad.md` y `observabilidad/` (pull request de observabilidad, pendiente de mezcla) |
 | Capacidad medida de `/login` | [crecimiento.md](../experimentos/crecimiento.md) |
 
+**Uso de IA:** Claude (Anthropic) ayudó a completar las secciones de alternativas, reversibilidad, supuestos y trazabilidad, y a escribir y probar las fitness functions FF-03 a FF-05. Las decisiones de la sección "Decisiones Seleccionadas" y su aceptación son del equipo.
