@@ -1,4 +1,4 @@
-# Hallazgos de la revisión de repositorios (2026-11-06)
+# Hallazgos de la revisión de repositorios
 
 > Este archivo **no reproduce** secretos ni datos personales; solo indica dónde están y cuántos son.
 
