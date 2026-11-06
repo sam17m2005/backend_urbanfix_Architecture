@@ -26,5 +26,9 @@ def create_app():
     # Importamos y registramos las rutas
     from .routes import main as main_blueprint
     app.register_blueprint(main_blueprint)
-    
+
+    # Observabilidad (Modulo 7): inactiva salvo que OTEL_ENABLED=1
+    from .observabilidad import init_observabilidad
+    init_observabilidad(app)
+
     return app

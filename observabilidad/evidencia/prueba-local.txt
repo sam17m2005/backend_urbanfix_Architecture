@@ -1,0 +1,70 @@
+{"ts": "2026-11-06T15:37:18.322+00:00", "level": "INFO", "logger": "urbanfix", "msg": "Observabilidad activa", "evento": "observabilidad_iniciada"}
+
+==============================================================================
+1) Login correcto (200): log JSON + traza peticion -> consultas SQL
+==============================================================================
+{"ts": "2026-11-06T15:37:18.564+00:00", "level": "INFO", "logger": "urbanfix", "msg": "peticion", "trace_id": "8fcf17d092dcd19f01fa8bce9007760a", "span_id": "a3b31847ee752fc8", "evento": "http_request", "request_id": "demo-login-ok", "endpoint": "/login", "method": "POST", "status": 200, "duration_ms": 102.0}
+  respuesta: 200  X-Request-ID=demo-login-ok
+  trace_id=8fcf17d092dcd19f01fa8bce9007760a
+  - POST /login  [UNSET] 103.2 ms http=200
+    - connect  [UNSET] 0.2 ms
+    - SELECT /tmp/urbanfix-obs-7_k1gob4/prueba.db  [UNSET] 0.1 ms sql='SELECT usuarios.id AS usuarios_id, usuarios.nombre AS usuari'
+    - SELECT /tmp/urbanfix-obs-7_k1gob4/prueba.db  [UNSET] 0.1 ms sql='SELECT funcionarios.id AS funcionarios_id, funcionarios.nomb'
+
+==============================================================================
+2) Login fallido (401): el log deja el evento con su codigo
+==============================================================================
+{"ts": "2026-11-06T15:37:18.662+00:00", "level": "WARNING", "logger": "urbanfix", "msg": "peticion", "trace_id": "382f4d1da7cc54971fd06b8c352de539", "span_id": "fab7da72bf781306", "evento": "http_request", "request_id": "9487af1427f649e4802a2277ac321ea8", "endpoint": "/login", "method": "POST", "status": 401, "duration_ms": 95.6}
+
+==============================================================================
+3) F-05 · S3 inalcanzable: POST /reportes responde 201 (falso verde) pero el fallo NO pasa desapercibido
+==============================================================================
+{"ts": "2026-11-06T15:37:18.672+00:00", "level": "ERROR", "logger": "urbanfix", "msg": "Fallo al subir a S3", "trace_id": "08ec3a817d19af15d1a03207b2b59b26", "span_id": "2b26df19d8c5fc4c", "evento": "s3_upload_failed", "bucket": "bucket-prueba", "error_tipo": "EndpointConnectionError"}
+{"ts": "2026-11-06T15:37:18.684+00:00", "level": "INFO", "logger": "urbanfix", "msg": "peticion", "trace_id": "08ec3a817d19af15d1a03207b2b59b26", "span_id": "2b26df19d8c5fc4c", "evento": "http_request", "request_id": "dd90e33938e74d46ac1fd9ccfd72f4bf", "endpoint": "/reportes", "method": "POST", "status": 201, "duration_ms": 21.4}
+  respuesta HTTP: 201  (el cliente ve exito)
+  trace_id=08ec3a817d19af15d1a03207b2b59b26
+  - POST /reportes  [UNSET] 22.0 ms http=201
+    - S3.PutObject  [ERROR] 6.6 ms  eventos=['exception']
+    - connect  [UNSET] 0.1 ms
+    - INSERT /tmp/urbanfix-obs-7_k1gob4/prueba.db  [UNSET] 0.3 ms sql='INSERT INTO reportes (descripcion, direccion, referencia, la'
+    - connect  [UNSET] 0.1 ms
+    - SELECT /tmp/urbanfix-obs-7_k1gob4/prueba.db  [UNSET] 0.1 ms sql='SELECT reportes.id AS reportes_id, reportes.descripcion AS r'
+    - SELECT /tmp/urbanfix-obs-7_k1gob4/prueba.db  [UNSET] 0.1 ms sql='SELECT count(apoyos.id) AS count_1 \nFROM apoyos \nWHERE apoyo'
+    - SELECT /tmp/urbanfix-obs-7_k1gob4/prueba.db  [UNSET] 0.1 ms sql='SELECT count(apoyos.id) AS count_1 \nFROM apoyos \nWHERE apoyo'
+    - SELECT /tmp/urbanfix-obs-7_k1gob4/prueba.db  [UNSET] 0.1 ms sql='SELECT categorias.id AS categorias_id, categorias.nombre AS '
+    - SELECT /tmp/urbanfix-obs-7_k1gob4/prueba.db  [UNSET] 0.1 ms sql='SELECT usuarios.id AS usuarios_id, usuarios.nombre AS usuari'
+
+==============================================================================
+3b) F-07 · imagen corrupta: tambien responde 201, y el log dice por que
+==============================================================================
+{"ts": "2026-11-06T15:37:18.708+00:00", "level": "ERROR", "logger": "urbanfix", "msg": "Fallo al subir a S3", "trace_id": "3b0217f3a51299ee133ef010d278d8a5", "span_id": "d58a550b442ea648", "evento": "s3_upload_failed", "bucket": "bucket-prueba", "error_tipo": "UnidentifiedImageError"}
+{"ts": "2026-11-06T15:37:18.715+00:00", "level": "INFO", "logger": "urbanfix", "msg": "peticion", "trace_id": "3b0217f3a51299ee133ef010d278d8a5", "span_id": "d58a550b442ea648", "evento": "http_request", "request_id": "1be6fa14a6974b0981fba2cbbccd54b7", "endpoint": "/reportes", "method": "POST", "status": 201, "duration_ms": 29.4}
+  respuesta HTTP: 201  (el cliente ve exito)
+
+==============================================================================
+4) F-03 · la BD falla: /login lanza excepcion (500) y /health responde 503
+==============================================================================
+{"ts": "2026-11-06T15:37:18.717+00:00", "level": "ERROR", "logger": "app", "msg": "Exception on /login [POST]", "trace_id": "92943d4184fa05f8f523bcef5458a0af", "span_id": "e5572a8dd6970ada", "exc": "Traceback (most recent call last):\n  File \"/tmp/venv_otel/lib/python3.12/site-packages/flask/app.py\", line 1511, in wsgi_app\n    response = self.full_dispatch_request()\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/venv_otel/lib/python3.12/site-packages/flask/app.py\", line 919, in full_dispatch_request\n    rv = self.handle_user_exception(e)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/venv_otel/lib/python3.12/site-packages/flask/app.py\", line 917, in full_dispatch_request\n    rv = self.dispatch_request()\n         ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/venv_otel/lib/python3.12/site-packages/flask/app.py\", line 902, in dispatch_request\n    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/obs_run/app/routes.py\", line 50, in login\n    user = Usuario.query.filter_by(email=email).first()\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/venv_otel/lib/python3.12/site-packages/sqlalchemy/orm/query.py\", line 2759, in first\n    return self.limit(1)._iter().first()  # type: ignore\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/venv_otel/lib/python3.12/site-packages/sqlalchemy/orm/query.py\", line 2857, in _iter\n    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(\n                                                  ^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/unittest/mock.py\", line 1134, in __call__\n    return self._mock_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/unittest/mock.py\", line 1138, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/unittest/mock.py\", line 1193, in _execute_mock_call\n    raise effect\nsqlalchemy.exc.OperationalError: (builtins.Exception) conexion rechazada\n[SQL: SELECT 1]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)"}
+{"ts": "2026-11-06T15:37:18.719+00:00", "level": "ERROR", "logger": "urbanfix", "msg": "peticion", "trace_id": "92943d4184fa05f8f523bcef5458a0af", "span_id": "e5572a8dd6970ada", "evento": "http_request", "request_id": "92e940c2f2fd4480a5fcfbe68de1e3b0", "endpoint": "/login", "method": "POST", "status": 500, "duration_ms": 2.2}
+  /login   -> 500
+{"ts": "2026-11-06T15:37:18.721+00:00", "level": "ERROR", "logger": "urbanfix", "msg": "BD no disponible", "evento": "health_bd_fallo", "error_tipo": "OperationalError"}
+{"ts": "2026-11-06T15:37:18.721+00:00", "level": "ERROR", "logger": "urbanfix", "msg": "peticion", "evento": "http_request", "request_id": "6f86d72778dc48d7a03c704ef5dc4900", "endpoint": "/health", "method": "GET", "status": 503, "duration_ms": 0.4}
+  /health  -> 503 {'bd': 'error', 'estado': 'degradado'}
+
+==============================================================================
+5) /health con la BD sana
+==============================================================================
+  /health  -> 200 {'bd': 'ok', 'estado': 'ok'}
+
+==============================================================================
+6) Metricas recogidas (resumen)
+==============================================================================
+  http.server.request.duration           n=1 suma=0.1  {'http.request.method': 'POST', 'http.response.status_code': 200, 'http.route': '/login'}
+  http.server.request.duration           n=1 suma=0.1  {'http.request.method': 'POST', 'http.response.status_code': 401, 'http.route': '/login'}
+  http.server.request.duration           n=2 suma=0.1  {'http.request.method': 'POST', 'http.response.status_code': 201, 'http.route': '/reportes'}
+  http.server.request.duration           n=1 suma=0.0  {'http.request.method': 'POST', 'http.response.status_code': 500, 'http.route': '/login'}
+  urbanfix.s3.upload.failures                       1  {'bucket': 'bucket-prueba', 'error_tipo': 'EndpointConnectionError'}
+  urbanfix.s3.upload.failures                       1  {'bucket': 'bucket-prueba', 'error_tipo': 'UnidentifiedImageError'}
+  urbanfix.db.pool.connections                      0  {'estado': 'en_uso'}
+  urbanfix.db.pool.connections                      5  {'estado': 'tamano'}
+  urbanfix.db.pool.connections                      0  {'estado': 'desborde'}

@@ -1,0 +1,26 @@
+# Lo que recibio el OpenTelemetry Collector 0.164.0 por OTLP/HTTP (4318) desde la app instrumentada
+# Entorno de preparacion: sin Docker, SQLite temporal, S3 apuntando a un puerto cerrado. Fecha: 2026-11-06.
+# Fuente: salida del exportador `debug` del Collector, resumida.
+
+Recurso: service.name=urbanfix-backend, deployment.environment=local
+
+Spans recibidos (nombre, estado, cantidad):
+   18  PRAGMA <bd>                  Unset
+   10  SELECT <bd>                  Unset
+    9  CREATE <bd>                  Unset
+    7  connect                      Unset
+    3  INSERT <bd>                  Unset
+    2  POST /login                  Unset
+    1  POST /login                  Error
+    1  POST /reportes               Unset
+    1  S3.PutObject                 Error
+
+Metricas recibidas:
+  db.client.connections.usage
+  exception
+  http.server.active_requests
+  http.server.request.duration
+  urbanfix.db.pool.connections
+  urbanfix.s3.upload.failures
+
+Lineas de nivel error o warn en el log del propio Collector: 0
