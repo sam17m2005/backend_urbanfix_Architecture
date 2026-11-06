@@ -109,20 +109,20 @@ No se cambia el algoritmo de hash: `scrypt` es una buena práctica y su costo es
 
 **Evidencia.**
 - *Comprobada:* `/test-deploy` responde `200`; `app.py` arranca con `debug=True` y `host='0.0.0.0'`, y el Dockerfile ejecuta ese archivo.
-- *Por inspección:* la carpeta `data/` contiene 1.314 archivos de un clúster de PostgreSQL y está versionada en un repositorio público; `.gitignore` no la excluye. **Su contenido no se verificó.**
+- *Verificada por el equipo* ([hallazgos-repositorio.md](../seguridad/05-evidencias-verificacion/hallazgos-repositorio.md)): la carpeta `data/` contiene 1.314 archivos de un clúster de PostgreSQL, versionada en un repositorio público desde el commit `92f46ea` (2026-08-26), y dentro hay **20 hashes `scrypt` de contraseña distintos y más de diez correos reales**. `.gitignore` no la excluye.
 - *Por inspección:* credenciales `postgres/postgres` en `docker-compose.yml` (de desarrollo), y `deploy.yml` usa `appleboy/ssh-action@master` (referencia mutable) y `pip install --upgrade` sin versiones fijas, lo que se relaciona con A03:2025 *Software Supply Chain Failures*.
 
-**Amenaza concreta.** El servidor de desarrollo expone información interna del servidor ante una excepción (F-13), y su depurador interactivo no debe estar accesible en un servicio expuesto. Si `data/` contiene datos reales, correos, teléfonos y hashes de contraseña quedan al alcance de quien clone el repositorio, y permanecen en el historial aunque se borre la carpeta.
+**Amenaza concreta.** El servidor de desarrollo expone información interna del servidor ante una excepción (F-13), y su depurador interactivo no debe estar accesible en un servicio expuesto. Como `data/` contiene datos reales (hashes y correos), esa información está al alcance de quien clone el repositorio y permanece en el historial aunque se borre la carpeta.
 
 **Control.**
 - Servir con Gunicorn y controlar `debug` con una variable de entorno desactivada por defecto.
 - Eliminar `/test-deploy` (`/health` cumple esa función).
-- Sacar `data/` del control de versiones (`git rm -r --cached data/` y `.gitignore`). Esto **no borra el historial**: si hubo datos reales, hay que tratarlo como un incidente (revisar qué contiene y rotar lo que corresponda).
+- Sacar `data/` del control de versiones (`git rm -r --cached data/` y `.gitignore`). Esto **no borra el historial**: si hubo datos reales, hay que tratarlo como un incidente (los datos ya están confirmados como reales: rotar las contraseñas afectadas y avisar a los titulares según corresponda).
 - Fijar la acción de CI por el SHA de un commit y fijar las versiones en el despliegue.
 
 **Cómo se verificaría.** Una **fitness function propuesta (FF-05)**: `app.py` sin `debug=True`, sin rutas de prueba y con `data/` ignorada; el CI falla si reaparecen.
 
-**Prioridad.** `data/` merece atención inmediata, antes que el resto de este documento.
+**Prioridad.** `data/` merece atención inmediata, antes que el resto de este documento. Los logs del propio equipo muestran además `Debug mode: on` y `Debugger is active!` en el contenedor (`observabilidad/evidencia/Log_trazas`).
 
 ## 5. Revisadas y no seleccionadas
 
@@ -140,10 +140,21 @@ No se cambia el algoritmo de hash: `scrypt` es una buena práctica y su costo es
 - Las comprobaciones se hicieron en un entorno aislado (SQLite, cliente de pruebas): confirman el camino que sigue el código, no el comportamiento contra los servicios reales.
 - Las amenazas descritas son escenarios razonados a partir de lo comprobado; **no se probaron con un atacante**.
 - No se estimó el esfuerzo ni el costo de los controles.
-- El contenido de `data/` no se inspeccionó.
+- El contenido de `data/` lo verificó el equipo en `hallazgos-repositorio.md`; este documento no lo repite ni lo reproduce.
 - **No ejecutar `comprobar_riesgos.py` contra un sistema real:** sus pruebas borran y crean cuentas. Está pensado solo para el entorno aislado que él mismo crea.
 
-## 7. Trazabilidad
+## 7. Correspondencia con la matriz de riesgos de seguridad
+
+Las cuatro categorías seleccionadas aquí cubren, en [03-matriz-riesgos-controles.md](../seguridad/03-matriz-riesgos-controles.md), los siguientes riesgos. Este documento usa la numeración de **OWASP Top 10:2025**.
+
+| Categoría (2025) | Riesgos de la matriz |
+|---|---|
+| A01 · Broken Access Control | SEG-02, SEG-03, SEG-04 |
+| A07 · Authentication Failures | SEG-01, SEG-06 |
+| A09 · Security Logging & Alerting Failures | SEG-14 |
+| A02 · Security Misconfiguration | SEG-05, SEG-09, SEG-12 |
+
+## 8. Trazabilidad
 
 | Elemento | Ubicación |
 |---|---|

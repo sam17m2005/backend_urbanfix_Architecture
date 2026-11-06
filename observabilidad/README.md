@@ -38,14 +38,14 @@ Para volver al sistema sin observabilidad: `docker compose down --remove-orphans
 - `docker logs urbanfix-otel-collector`: spans `POST /login` con hijos de SQLAlchemy, y las métricas `http.server.request.duration`, `urbanfix.db.pool.connections` y `urbanfix.s3.upload.failures`.
 - `/health` responde `200` con la BD arriba y `503` con ella detenida (`docker compose stop db`).
 
-## Capturas que el equipo debe tomar (evidencia propia)
+## Capturas del equipo (evidencia propia, tomadas el 2026-11-06)
 1. Una línea de log de `/login` y la traza con el mismo `trace_id` en el log del Collector.
 2. `/health` en `200` y luego en `503` con la BD detenida.
 3. El evento `s3_upload_failed` al provocar un fallo de S3 (credencial inválida en un bucket de prueba).
 4. La métrica `urbanfix.db.pool.connections` durante una corrida de carga.
 
 ## Lo que NO está verificado
-- La construcción de la imagen Docker y el arranque con Compose (no hay Docker en el entorno de preparación).
-- El funcionamiento con PostgreSQL y `psycopg2` (se probó con SQLite).
+- Subidas reales a S3 (las pruebas usan un S3 inalcanzable a propósito) y el comportamiento bajo carga sostenida.
+- La imagen Docker, el Compose, el Collector y PostgreSQL real **sí** los ejecutó el equipo: ver `observabilidad/evidencia/`.
 - El costo de la instrumentación: **no se midió el efecto sobre la capacidad de `/login`** (≈ 16 logins/s). Debe medirse con el protocolo del experimento de crecimiento antes de activarla en producción.
 - La etiqueta `otel/opentelemetry-collector:0.164.0` en Docker Hub: es la versión del binario con el que se validó la configuración, pero no se pudo consultar el registro. Registre el *digest* tras el primer `docker pull`.

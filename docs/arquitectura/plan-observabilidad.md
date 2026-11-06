@@ -49,7 +49,7 @@ Este plan parte de un hecho verificado en `main`: hoy el único diagnóstico es 
 | Métricas HTTP por ruta y código, conexiones del pool y fallos de S3 | **Implementado y ejecutado** en el entorno de preparación |
 | `GET /health` (liveness y readiness con `SELECT 1`) | **Implementado y ejecutado** en el entorno de preparación |
 | Exportación OTLP/HTTP al Collector 0.164.0 | **Implementado y ejecutado** de punta a punta con el binario del Collector |
-| Imagen Docker, Compose con Collector, PostgreSQL real | **Escrito, sin ejecutar** (no hay Docker en el entorno de preparación) |
+| Imagen Docker, Compose con Collector y PostgreSQL real | **Ejecutado por el equipo el 2026-11-06** (Docker Desktop, PostgreSQL 16 real, Collector 0.164.0): ver `observabilidad/evidencia/Log_trazas`, `DBcaida`, `Falso_verde_s3` y `Metricas` |
 | Las 8 alertas, tablero, almacenamiento de métricas | **Propuesto** |
 | Métricas de CPU, memoria y reinicios; span del hash de contraseñas; eventos de seguridad; reemplazo de los 16 `print` de `routes.py`; seudónimo de usuario | **Propuesto** |
 
@@ -104,7 +104,7 @@ Cada línea es un objeto JSON por `stdout` (visible con `docker logs`). Campos c
 | `health_bd_fallo` | ERROR | `error_tipo` | Detectar la BD caída (F-03) | Implementado (PoC) |
 | `observabilidad_iniciada` | INFO | — | Marcar cada arranque (conteo de reinicios, F-12) | Implementado (PoC) |
 | Excepción no controlada | ERROR | Traza de pila, con `trace_id` | Diagnóstico de errores de programación | Implementado (PoC), con el registrador de Flask |
-| `login_fallido`, `acceso_denegado`, `recurso_eliminado` | WARNING / INFO | Cuenta seudonimizada, motivo, origen | Seguridad (riesgos A01, A07, A09 de OWASP) | **Propuesto** |
+| `login_fallido`, `acceso_denegado`, `recurso_eliminado` | WARNING / INFO | Cuenta seudonimizada, motivo, origen | Seguridad (riesgos A01, A07, A09 de OWASP). Complementan, y no sustituyen, la tabla de auditoría `eventos_seguridad` de CTL-14: el log sirve a la operación y a las alertas; la tabla es el rastro de auditoría. Los nombres de evento deben ser los mismos | **Propuesto** |
 | Error capturado por un `try/except` en las rutas | ERROR | Excepción y contexto | Hoy se emite con `print` y **no es visible** (ver sección 11) | **Propuesto**: reemplazar los 16 `print` por `log.exception` |
 
 **Qué no se registra a propósito:** cuerpos de petición, contraseñas, correos ni teléfonos. Las sentencias SQL se registran con marcadores de posición, sin los valores.
@@ -149,7 +149,7 @@ Todas las alertas están **propuestas**: no hay hoy un sistema que las evalúe n
 | **A-05** | Al menos 1 evento `s3_upload_failed` en 5 min | Métrica y log | Cada fallo es un reporte guardado con una imagen inexistente (F-05, F-07), sin que el ciudadano lo sepa | Responsable de guardia | OP-04 |
 | **A-06** | 1 o más reinicios del backend en 10 min | Marcador `observabilidad_iniciada` o `RestartCount` | Indica caída del proceso (F-12) o un despliegue inesperado | Responsable de guardia | OP-03 |
 | **A-07** | CPU del backend > 90 % o memoria > 80 % del límite durante 5 min | Métrica (propuesta) | En el E3 el equipo llega al 98 % de CPU desde ~10 usuarios; es la saturación de F-02 y F-08. Umbral **a calibrar**: en reposo el equipo marcó entre 17 % y 44 % | Responsable de guardia | OP-01 |
-| **A-08** | Más de 20 respuestas `401` o `404` en `/login` por minuto desde un mismo origen o cuenta | Log y métrica | Posible fuerza bruta o enumeración de cuentas (riesgo A07 de OWASP). Umbral **inicial, a calibrar**. Requiere registrar origen y cuenta seudonimizada, que hoy no se registran | Responsable de seguridad | OP-05 |
+| **A-08** | 10 o más intentos fallidos (`401`) contra una misma cuenta en 15 min (el umbral de bloqueo de CTL-06), o 5 o más respuestas `429` por minuto en `/login` | Log y métrica | Posible fuerza bruta o enumeración de cuentas (riesgo A07 de OWASP). Umbrales **alineados con CTL-06** de [03-matriz-riesgos-controles.md](../seguridad/03-matriz-riesgos-controles.md); **iniciales, a calibrar**. Requiere registrar la cuenta seudonimizada y el origen, que hoy no se registran | Responsable de seguridad | OP-05 |
 
 **Destinatarios.** "Responsable de guardia" y "responsable de seguridad" son roles propuestos (rotación semanal entre los tres integrantes). El canal de notificación **no está definido en el repositorio**: es una decisión pendiente del equipo.
 
@@ -213,10 +213,11 @@ Lo que todavía **no** se puede observar o no se ha comprobado:
 4. **"A quién afectó"** solo se responde en número de peticiones. No hay identificador de usuario en los logs. Agregarlo implica tratar datos personales (Ley 1581 de 2012) y definir retención.
 5. **Origen de las peticiones** (IP) y cuenta no se registran: A-08 no puede evaluarse todavía.
 6. **Sobrecarga de la instrumentación sin medir.** El sistema satura su CPU con ≈ 16 logins/s; trazar el 100 % de las peticiones podría reducir esa capacidad. Debe medirse con el protocolo del experimento de crecimiento (corridas con y sin `OTEL_ENABLED=1`) antes de activarlo en cualquier despliegue.
-7. **Entorno de la prueba.** Se ejecutó con SQLite y sin Docker. La imagen, el Compose y el uso con PostgreSQL y `psycopg2` están escritos pero no ejecutados.
+7. **Entorno de la prueba.** La prueba rápida se ejecutó en el entorno de preparación con SQLite. El equipo ejecutó después la imagen, el Compose, el Collector y PostgreSQL real (evidencia en `observabilidad/evidencia/`). **No se ejecutó** contra S3 real ni bajo carga sostenida.
 8. **Datos personales en las trazas.** La instrumentación de Flask registra la URL de la petición, que puede incluir parámetros como `?user_id=` (ruta `/misreportes`). Habría que redactarlos antes de enviar las trazas fuera de la máquina local.
 9. **El cliente Android y Gemini** no emiten telemetría: F-15 y F-16 son invisibles para el backend.
-10. **Umbrales a calibrar:** A-01 para `/reportes`, A-07 y A-08 son valores iniciales; solo A-01 para `/login`, A-02 y A-03 salen de mediciones del proyecto.
+10. **Con `debug=True` el marcador de arranque se emite dos veces.** El recargador de Werkzeug ejecuta `create_app()` en dos procesos, y la evidencia del equipo lo muestra: `observabilidad_iniciada` aparece a las 18:28:05 y a las 18:28:06 (`Log_trazas`), junto con `Debug mode: on` y `Debugger is active!`. Contar reinicios con ese marcador exige dividir por dos o usar `RestartCount` de Docker. Es además evidencia, en el entorno del propio equipo, del riesgo A02 de [riesgos-owasp-seleccionados.md](./riesgos-owasp-seleccionados.md).
+11. **Umbrales a calibrar:** A-01 para `/reportes`, A-07 y A-08 son valores iniciales; solo A-01 para `/login`, A-02 y A-03 salen de mediciones del proyecto.
 
 ## 12. Trazabilidad
 
@@ -232,6 +233,6 @@ Lo que todavía **no** se puede observar o no se ha comprobado:
 | Valores medidos usados en los umbrales | [crecimiento.md](../../experimentos/crecimiento.md) (E3) · [tactica-resiliencia.md](../../experimentos/tactica-resiliencia.md) (Spike 01) |
 | Entrega | Rama `observabilidad/plan` y su *pull request*, con los tres autores |
 
-**Verificación pendiente del equipo:** repetir las pruebas en su máquina con Docker (sección B de `observabilidad/README.md`) y adjuntar las cuatro capturas indicadas allí. Las evidencias de este repositorio provienen del entorno de preparación y no sustituyen la ejecución del equipo.
+**Evidencia de ejecución del equipo (2026-11-06, Docker Desktop y PostgreSQL real):** `observabilidad/evidencia/Log_trazas` (log JSON con `trace_id` y la métrica de `/login` en el Collector), `DBcaida` (`/health` pasa de `503` a `200` al detener y volver a iniciar la BD), `Falso_verde_s3` (F-05 y F-07: `201` al cliente y `s3_upload_failed` + span `S3.PutObject` en `Error`) y `Metricas` (prueba de humo de k6 con 100 % de checks y las métricas `http.server.request.duration` y `urbanfix.db.pool.connections` en el Collector). Las evidencias del entorno de preparación (`prueba-local.txt`, `colector-recibido.txt`, `control-sin-threading.txt`) complementan estas, no las sustituyen.
 
 **Uso de IA:** Claude (Anthropic) ayudó a revisar el repositorio, a escribir y probar la prueba de concepto de instrumentación y a redactar este plan. Los umbrales, los destinatarios de las alertas y las decisiones sobre qué herramientas adoptar son del equipo y están por ratificar.
