@@ -1,0 +1,44 @@
+tests/security/test_controles_seguridad.py::test_seg01_login_entrega_token XFAIL
+tests/security/test_controles_seguridad.py::test_seg01_ruta_protegida_rechaza_peticion_sin_token XFAIL
+tests/security/test_controles_seguridad.py::test_seg06_login_no_revela_si_la_cuenta_existe XFAIL
+tests/security/test_controles_seguridad.py::test_seg02_usuario_b_no_puede_borrar_reporte_de_a XFAIL
+tests/security/test_controles_seguridad.py::test_seg02_usuario_b_no_puede_cambiar_contrasena_de_a XFAIL
+tests/security/test_controles_seguridad.py::test_seg02_cualquiera_no_puede_eliminar_cuenta_ajena XFAIL
+tests/security/test_controles_seguridad.py::test_seg02_comentario_solo_lo_edita_su_autor XFAIL
+tests/security/test_controles_seguridad.py::test_seg03_cabecera_user_role_no_otorga_privilegios XFAIL
+tests/security/test_controles_seguridad.py::test_seg03_registro_de_funcionario_no_es_publico XFAIL
+tests/security/test_controles_seguridad.py::test_seg03_crear_entidad_publica_requiere_rol_admin XFAIL
+tests/security/test_controles_seguridad.py::test_seg04_listado_de_usuarios_no_es_publico XFAIL
+tests/security/test_controles_seguridad.py::test_seg04_perfil_publico_no_expone_email XFAIL
+tests/security/test_controles_seguridad.py::test_seg04_listado_de_funcionarios_no_expone_email XFAIL
+tests/security/test_controles_seguridad.py::test_seg08_imagen_invalida_rechaza_el_reporte XFAIL
+tests/security/test_controles_seguridad.py::test_seg08_rechaza_payload_desmesurado XFAIL
+tests/security/test_controles_seguridad.py::test_seg09_modo_debug_desactivado_en_punto_de_entrada XFAIL
+tests/security/test_controles_seguridad.py::test_seg09_rutas_de_prueba_no_estan_expuestas XFAIL
+tests/security/test_controles_seguridad.py::test_seg10_errores_no_devuelven_excepciones_crudas XFAIL
+tests/security/test_controles_seguridad.py::test_seg05_repositorio_no_versiona_datos_de_postgres XFAIL
+tests/security/test_controles_seguridad.py::test_seg05_compose_no_tiene_contrasena_de_bd_en_claro XFAIL
+tests/security/test_controles_seguridad.py::test_base_contrasenas_se_guardan_con_hash PASSED
+tests/security/test_controles_seguridad.py::test_base_login_no_devuelve_el_hash PASSED
+tests/security/test_controles_seguridad.py::test_base_orm_parametriza_consultas PASSED
+XFAIL tests/security/test_controles_seguridad.py::test_seg01_login_entrega_token - SEG-01: control propuesto, no implementado
+XFAIL tests/security/test_controles_seguridad.py::test_seg01_ruta_protegida_rechaza_peticion_sin_token - SEG-01: control propuesto, no implementado
+XFAIL tests/security/test_controles_seguridad.py::test_seg06_login_no_revela_si_la_cuenta_existe - SEG-06: control propuesto, no implementado
+XFAIL tests/security/test_controles_seguridad.py::test_seg02_usuario_b_no_puede_borrar_reporte_de_a - SEG-02: control propuesto, no implementado
+XFAIL tests/security/test_controles_seguridad.py::test_seg02_usuario_b_no_puede_cambiar_contrasena_de_a - SEG-02: control propuesto, no implementado
+XFAIL tests/security/test_controles_seguridad.py::test_seg02_cualquiera_no_puede_eliminar_cuenta_ajena - SEG-02: control propuesto, no implementado
+XFAIL tests/security/test_controles_seguridad.py::test_seg02_comentario_solo_lo_edita_su_autor - SEG-02: control propuesto, no implementado
+XFAIL tests/security/test_controles_seguridad.py::test_seg03_cabecera_user_role_no_otorga_privilegios - SEG-03: control propuesto, no implementado
+XFAIL tests/security/test_controles_seguridad.py::test_seg03_registro_de_funcionario_no_es_publico - SEG-03: control propuesto, no implementado
+XFAIL tests/security/test_controles_seguridad.py::test_seg03_crear_entidad_publica_requiere_rol_admin - SEG-03: control propuesto, no implementado
+XFAIL tests/security/test_controles_seguridad.py::test_seg04_listado_de_usuarios_no_es_publico - SEG-04: control propuesto, no implementado
+XFAIL tests/security/test_controles_seguridad.py::test_seg04_perfil_publico_no_expone_email - SEG-04: control propuesto, no implementado
+XFAIL tests/security/test_controles_seguridad.py::test_seg04_listado_de_funcionarios_no_expone_email - SEG-04: control propuesto, no implementado
+XFAIL tests/security/test_controles_seguridad.py::test_seg08_imagen_invalida_rechaza_el_reporte - SEG-08: control propuesto, no implementado
+XFAIL tests/security/test_controles_seguridad.py::test_seg08_rechaza_payload_desmesurado - SEG-08: control propuesto, no implementado
+XFAIL tests/security/test_controles_seguridad.py::test_seg09_modo_debug_desactivado_en_punto_de_entrada - SEG-09: control propuesto, no implementado
+XFAIL tests/security/test_controles_seguridad.py::test_seg09_rutas_de_prueba_no_estan_expuestas - SEG-09: control propuesto, no implementado
+XFAIL tests/security/test_controles_seguridad.py::test_seg10_errores_no_devuelven_excepciones_crudas - SEG-10: control propuesto, no implementado
+XFAIL tests/security/test_controles_seguridad.py::test_seg05_repositorio_no_versiona_datos_de_postgres - SEG-05: control propuesto, no implementado
+XFAIL tests/security/test_controles_seguridad.py::test_seg05_compose_no_tiene_contrasena_de_bd_en_claro - SEG-05: control propuesto, no implementado
+======================== 3 passed, 20 xfailed in 5.57s =========================

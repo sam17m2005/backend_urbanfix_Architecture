@@ -1,0 +1,54 @@
+digraph superficie {
+  graph [rankdir=LR, fontname="Helvetica", fontsize=11, pad=0.3, nodesep=0.45, ranksep=0.7, label="UrbanFix — Superficie de ataque y límites de confianza (estado actual, nov-2026)\nRojo = punto de entrada sin control de identidad   ·   Líneas punteadas = límite de confianza (TB)", labelloc=t];
+  node  [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled", fillcolor="#ffffff", color="#444444"];
+  edge  [fontname="Helvetica", fontsize=9, color="#555555"];
+
+  atacante [label="Atacante en Internet\n(cliente HTTP cualquiera,\nno necesita la app)", shape=octagon, fillcolor="#fde2e2", color="#b42318"];
+  ciudadano [label="Ciudadano", shape=ellipse, fillcolor="#eef4ff"];
+  funcionario [label="Funcionario\n(IDU, UAESP, EAB…)", shape=ellipse, fillcolor="#eef4ff"];
+  dev [label="Equipo de desarrollo", shape=ellipse, fillcolor="#eef4ff"];
+
+  subgraph cluster_tb6 { label="TB6 · Dispositivo Android (no confiable)"; style=dashed; color="#b42318";
+    app [label="App Kotlin / Compose\n• BASE_URL http://IP:5000 (sin TLS)\n• Gemini API key embebida\n• Contraseña 'Recordarme' en SharedPreferences\n• allowBackup=true"];
+  }
+
+  subgraph cluster_ext { label="Servicios externos SaaS"; style=dashed; color="#888888";
+    gemini [label="Gemini API\n(clave en el APK)"];
+    mapbox [label="Mapbox\n(token público)"];
+  }
+
+  subgraph cluster_tb1 { label="TB1 · Borde Internet → API (HTTP :5000, sin TLS)"; style=dashed; color="#b42318";
+    subgraph cluster_api { label="Backend Flask — un solo proceso (ADR 0001)"; style="rounded"; color="#444444";
+      auth  [label="Identidad\nPOST /login · POST /usuarios\nPOST /funcionarios (público)", fillcolor="#fde2e2", color="#b42318"];
+      rep   [label="Reportes\nGET/POST /reportes · GET/PUT/DELETE /reportes/<id>\nPUT /reportes/<id>/estado (rol por cabecera)\nGET /misreportes?user_id · GET /reportes/geojson", fillcolor="#fde2e2", color="#b42318"];
+      val   [label="Validación ciudadana\nPOST/DELETE /reportes/<id>/reaccion (actor_id en body)\nPOST /reportes/<id>/comentarios · PUT/DELETE /comentarios/<id>", fillcolor="#fde2e2", color="#b42318"];
+      cuentas [label="Cuentas y perfiles\nGET /usuarios (lista todo) · GET /funcionarios\nPUT/DELETE /usuarios/<id> · /funcionarios/<id>\nPOST …/foto_perfil · GET …/perfil", fillcolor="#fde2e2", color="#b42318"];
+      inst  [label="Institucional / catálogos\nGET/POST /entidades · GET /categorias\nGET /estados-reporte · GET /test-deploy", fillcolor="#fde2e2", color="#b42318"];
+      utils [label="utils.py\nbase64 → Pillow → S3\n(sin límite de tamaño)"];
+    }
+  }
+
+  subgraph cluster_tb2 { label="TB2 · API → Base de datos"; style=dashed; color="#b42318";
+    pg [label="PostgreSQL 16 (compose) / Neon\npostgres:postgres · puerto 5432 publicado\npg_hba 'trust' local", shape=cylinder, fillcolor="#fff4e5"];
+  }
+  subgraph cluster_tb3 { label="TB3 · API → AWS"; style=dashed; color="#888888";
+    s3 [label="S3 urbanfiximagenesbucket\nS3 urbanfixperfilimagenesbucket\n(URLs públicas directas)", shape=cylinder, fillcolor="#fff4e5"];
+    secrets [label=".env con AWS keys\nde larga duración", shape=note, fillcolor="#fff4e5"];
+  }
+  subgraph cluster_tb5 { label="TB5 · Cadena de entrega"; style=dashed; color="#b42318";
+    gh [label="GitHub (repos públicos)\n• data/ = cluster PostgreSQL versionado\n• ssh-action@master → EC2", fillcolor="#fde2e2", color="#b42318"];
+  }
+
+  ciudadano -> app; funcionario -> app;
+  app -> auth [label="JSON en claro"]; app -> rep; app -> val; app -> cuentas; app -> inst;
+  app -> gemini [label="key en query string"]; app -> mapbox;
+  atacante -> auth [color="#b42318", fontcolor="#b42318", label="fuerza bruta\nenumeración"];
+  atacante -> cuentas [color="#b42318", fontcolor="#b42318", label="IDOR / volcado"];
+  atacante -> rep [color="#b42318", fontcolor="#b42318", label="User-Role: funcionario"];
+  atacante -> gh [color="#b42318", fontcolor="#b42318", label="clona datos\ny claves"];
+  atacante -> pg [color="#b42318", fontcolor="#b42318", style=dashed, label="5432 si el host\nestá expuesto"];
+  rep -> utils; cuentas -> utils; utils -> s3;
+  auth -> pg; rep -> pg; val -> pg; cuentas -> pg; inst -> pg;
+  secrets -> utils [style=dotted, label="boto3"];
+  dev -> gh;
+}
