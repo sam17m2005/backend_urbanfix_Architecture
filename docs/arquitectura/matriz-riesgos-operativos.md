@@ -1,4 +1,4 @@
-# Matriz de riesgos operativos — Backend UrbanFix (Resumido)
+# Matriz de riesgos operativos — Backend UrbanFix
 
 **Entregable:** Módulo 7 · Matriz de riesgos operativos (Acompaña al [ADR 0005](../../adrs/0005-politica-seguridad-observabilidad.md))  
 **Autores:** Johan Felipe Aguilar Castillo · Samuel Alejandro González Grajales · Juan David Barragán  
