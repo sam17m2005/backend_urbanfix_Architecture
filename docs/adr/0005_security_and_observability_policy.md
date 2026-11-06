@@ -1,4 +1,4 @@
-# ADR 0005 — Política de seguridad y observabilidad (Resumido)
+# ADR 0005 — Política de seguridad y observabilidad 
 
 **Autores:** Johan Felipe Aguilar Castillo · Samuel Alejandro González Grajales · Juan David Barragán  
 **Estado:** Propuesta  
