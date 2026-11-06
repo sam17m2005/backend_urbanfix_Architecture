@@ -1,0 +1,24 @@
+# Se SUPERPONE al docker-compose.yml (que queda intacto). Agrega el Collector y activa la instrumentacion del backend.
+#   Sin observabilidad: docker compose up -d --build
+#   Con observabilidad: docker compose -f docker-compose.yml -f docker-compose.observabilidad.yml up -d --build
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector:0.164.0   # misma version del binario con el que se valido la configuracion
+    container_name: urbanfix-otel-collector
+    restart: unless-stopped
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./observabilidad/otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
+    # Sin `ports`: solo el backend (misma red de Compose) necesita llegar al 4318.
+
+  backend:
+    build:
+      context: .
+      dockerfile: dockerfile.observabilidad
+    environment:
+      OTEL_ENABLED: "1"
+      OTEL_SERVICE_NAME: urbanfix-backend
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      LOG_LEVEL: INFO
+    depends_on:
+      - otel-collector

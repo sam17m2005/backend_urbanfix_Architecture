@@ -1,0 +1,20 @@
+# Prueba de control: SIN ThreadingInstrumentor (se reemplazo su linea por 'pass').
+# Entorno de preparacion (SQLite, S3 inalcanzable). Fecha: 2026-11-06.
+# Resultado: el span S3.PutObject NO aparece dentro de la traza de POST /reportes (queda como traza aparte).
+
+3) F-05 · S3 inalcanzable: POST /reportes responde 201 (falso verde) pero el fallo NO pasa desapercibido
+==============================================================================
+  respuesta HTTP: 201  (el cliente ve exito)
+  trace_id=fbbc0e2c4f33f91d59257434321742f4
+  - POST /reportes  [UNSET] 21.9 ms http=201
+    - connect  [UNSET] 0.1 ms
+    - INSERT /tmp/urbanfix-obs-4f0_wryl/prueba.db  [UNSET] 0.3 ms sql='INSERT INTO reportes (descripcion, direccion, referencia, la'
+    - connect  [UNSET] 0.1 ms
+    - SELECT /tmp/urbanfix-obs-4f0_wryl/prueba.db  [UNSET] 0.1 ms sql='SELECT reportes.id AS reportes_id, reportes.descripcion AS r'
+    - SELECT /tmp/urbanfix-obs-4f0_wryl/prueba.db  [UNSET] 0.1 ms sql='SELECT count(apoyos.id) AS count_1 \nFROM apoyos \nWHERE apoyo'
+    - SELECT /tmp/urbanfix-obs-4f0_wryl/prueba.db  [UNSET] 0.0 ms sql='SELECT count(apoyos.id) AS count_1 \nFROM apoyos \nWHERE apoyo'
+    - SELECT /tmp/urbanfix-obs-4f0_wryl/prueba.db  [UNSET] 0.1 ms sql='SELECT categorias.id AS categorias_id, categorias.nombre AS '
+    - SELECT /tmp/urbanfix-obs-4f0_wryl/prueba.db  [UNSET] 0.1 ms sql='SELECT usuarios.id AS usuarios_id, usuarios.nombre AS usuari'
+
+==============================================================================
+3b) F-07 · imagen corrupta: tambien responde 201, y el log dice por que

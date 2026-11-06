@@ -1,0 +1,249 @@
+PS C:\Users\Casa\OneDrive\Documentos\UrbanFix_arquitectura\UrbanFix_back\backend_urbanfix_Architecture> k6 run -e HUMO=1 experimentos\crecimiento-S11\crecimiento.js
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: experimentos\crecimiento-S11\crecimiento.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 2 max VUs, 35s max duration (incl. graceful stop):
+              * paso_0002: 2 looping VUs for 5s (gracefulStop: 30s)
+
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 64      12.409428/s
+    checks_succeeded...: 100.00% 64 out of 64
+    checks_failed......: 0.00%   0 out of 64
+
+    ✓ status 200
+    ✓ login valido (respuesta con "exitoso")
+
+    HTTP
+    http_req_duration..............: avg=220.02ms min=192.59ms med=212.24ms max=286.42ms p(90)=247.25ms p(95)=265.86ms
+      { expected_response:true }...: avg=220.02ms min=192.59ms med=212.24ms max=286.42ms p(90)=247.25ms p(95)=265.86ms
+    http_req_failed................: 0.00%  0 out of 32
+    http_reqs......................: 32     6.204714/s
+
+    EXECUTION
+    iteration_duration.............: avg=322.15ms min=295ms    med=313.34ms max=396.46ms p(90)=348.41ms p(95)=372.07ms
+    iterations.....................: 32     6.204714/s
+    vus............................: 2      min=2       max=2
+    vus_max........................: 2      min=2       max=2
+
+    NETWORK
+    data_received..................: 17 kB  3.2 kB/s
+    data_sent......................: 6.1 kB 1.2 kB/s
+
+
+
+
+running (05.2s), 0/2 VUs, 32 complete and 0 interrupted iterations
+paso_0002 ✓ [======================================] 2 VUs  5s
+PS C:\Users\Casa\OneDrive\Documentos\UrbanFix_arquitectura\UrbanFix_back\backend_urbanfix_Architecture> docker logs urbanfix-otel-collector --tail 200 | Select-String "http.server.request.duration|urbanfix.db.pool"
+ScopeMetrics SchemaURL: https://opentelemetry.io/schemas/1.21.0
+InstrumentationScope opentelemetry.instrumentation.sqlalchemy 0.66b2
+Metric #0
+Descriptor:
+     -> Name: db.client.connections.usage
+     -> Description: The number of connections that are currently in state described by the state attribute.
+     -> Unit: connections
+     -> DataType: Sum
+     -> IsMonotonic: false
+     -> AggregationTemporality: Cumulative
+NumberDataPoints #0
+Data point attributes:
+     -> pool.name: Str(postgresql://db:5432/urbanfix)
+     -> state: Str(idle)
+StartTimestamp: 2026-11-06 18:29:06.208693444 +0000 UTC
+Timestamp: 2026-11-06 18:41:37.132187672 +0000 UTC
+Value: 3
+NumberDataPoints #1
+Data point attributes:
+     -> pool.name: Str(postgresql://db:5432/urbanfix)
+     -> state: Str(used)
+StartTimestamp: 2026-11-06 18:29:06.20885073 +0000 UTC
+Timestamp: 2026-11-06 18:41:37.132187672 +0000 UTC
+Value: -1
+        {"resource": {"service.instance.id": "813e03e8-3e7c-4224-af46-454620c17545", "service.name": "otelcol", "service.version": "0.164.0"}, "otelcol.component.id": "debug", "otelcol.component.kind": "exporter", "otelcol.signal": "metrics"}
+2026-11-06T18:41:48.144Z        info    Metrics {"resource": {"service.instance.id": "813e03e8-3e7c-4224-af46-454620c17545", "service.name": "otelcol", "service.version": "0.164.0"}, "otelcol.component.id": "debug", "otelcol.component.kind": "exporter", "otelcol.signal": "metrics", "resource metrics": 2, "metrics": 5, "data points": 11}
+2026-11-06T18:41:48.144Z        info    ResourceMetrics #0
+Resource SchemaURL: 
+Resource attributes:
+     -> telemetry.sdk.language: Str(python)
+     -> telemetry.sdk.name: Str(opentelemetry)
+     -> telemetry.sdk.version: Str(1.45.2)
+     -> service.instance.id: Str(b35089b9-e223-4f18-b14e-eba91e0149cb)
+     -> service.name: Str(urbanfix-backend)
+     -> service.version: Str(dev)
+     -> deployment.environment: Str(local)
+ScopeMetrics #0
+ScopeMetrics SchemaURL: 
+InstrumentationScope urbanfix 
+Metric #0
+Descriptor:
+     -> Name: urbanfix.db.pool.connections
+     -> Description: Conexiones del pool de SQLAlchemy (F-01: saturacion del pool)
+     -> Unit: 1
+     -> DataType: Gauge
+NumberDataPoints #0
+Data point attributes:
+     -> estado: Str(en_uso)
+StartTimestamp: 1970-01-01 00:00:00 +0000 UTC
+Timestamp: 2026-11-06 18:41:45.619181555 +0000 UTC
+Value: 0
+NumberDataPoints #1
+Data point attributes:
+     -> estado: Str(tamano)
+StartTimestamp: 1970-01-01 00:00:00 +0000 UTC
+Timestamp: 2026-11-06 18:41:45.619181555 +0000 UTC
+Value: 5
+NumberDataPoints #2
+Data point attributes:
+     -> estado: Str(desborde)
+StartTimestamp: 1970-01-01 00:00:00 +0000 UTC
+Timestamp: 2026-11-06 18:41:45.619181555 +0000 UTC
+Value: 0
+ResourceMetrics #1
+Resource SchemaURL: 
+Resource attributes:
+     -> telemetry.sdk.language: Str(python)
+     -> telemetry.sdk.name: Str(opentelemetry)
+     -> telemetry.sdk.version: Str(1.45.2)
+     -> service.instance.id: Str(513f0ea1-a5cc-4c7a-b1dc-d312cb25279f)
+     -> service.name: Str(urbanfix-backend)
+     -> service.version: Str(dev)
+     -> deployment.environment: Str(local)
+ScopeMetrics #0
+ScopeMetrics SchemaURL: 
+InstrumentationScope urbanfix 
+Metric #0
+Descriptor:
+     -> Name: urbanfix.db.pool.connections
+     -> Description: Conexiones del pool de SQLAlchemy (F-01: saturacion del pool)
+     -> Unit: 1
+     -> DataType: Gauge
+NumberDataPoints #0
+Data point attributes:
+     -> estado: Str(en_uso)
+StartTimestamp: 1970-01-01 00:00:00 +0000 UTC
+Timestamp: 2026-11-06 18:41:47.1355424 +0000 UTC
+Value: 0
+NumberDataPoints #1
+Data point attributes:
+     -> estado: Str(tamano)
+StartTimestamp: 1970-01-01 00:00:00 +0000 UTC
+Timestamp: 2026-11-06 18:41:47.1355424 +0000 UTC
+Value: 5
+NumberDataPoints #2
+Data point attributes:
+     -> estado: Str(desborde)
+StartTimestamp: 1970-01-01 00:00:00 +0000 UTC
+Timestamp: 2026-11-06 18:41:47.1355424 +0000 UTC
+Value: 0
+ScopeMetrics #1
+ScopeMetrics SchemaURL: https://opentelemetry.io/schemas/1.21.0
+InstrumentationScope opentelemetry.instrumentation.flask 0.66b2
+Metric #0
+Descriptor:
+     -> Name: http.server.active_requests
+     -> Description: Number of active HTTP server requests.
+     -> Unit: {request}
+     -> DataType: Sum
+     -> IsMonotonic: false
+     -> AggregationTemporality: Cumulative
+NumberDataPoints #0
+Data point attributes:
+     -> http.request.method: Str(GET)
+     -> url.scheme: Str(http)
+StartTimestamp: 2026-11-06 18:29:06.129951378 +0000 UTC
+Timestamp: 2026-11-06 18:41:47.1355424 +0000 UTC
+Value: 0
+NumberDataPoints #1
+Data point attributes:
+     -> http.request.method: Str(POST)
+     -> url.scheme: Str(http)
+StartTimestamp: 2026-11-06 18:29:27.926184994 +0000 UTC
+Timestamp: 2026-11-06 18:41:47.1355424 +0000 UTC
+Value: 0
+Metric #1
+Descriptor:
+     -> Name: http.server.request.duration
+     -> Description: Duration of HTTP server requests.
+     -> Unit: s
+     -> DataType: Histogram
+     -> AggregationTemporality: Cumulative
+HistogramDataPoints #0
+Data point attributes:
+     -> http.request.method: Str(POST)
+     -> url.scheme: Str(http)
+     -> network.protocol.version: Str(1.1)
+     -> http.response.status_code: Int(200)
+     -> http.route: Str(/login)
+StartTimestamp: 2026-11-06 18:29:28.159489243 +0000 UTC
+Timestamp: 2026-11-06 18:41:47.1355424 +0000 UTC
+Count: 33
+Sum: 7.079275
+Min: 0.187003
+Max: 0.279476
+ExplicitBounds #0: 0.005000
+ExplicitBounds #1: 0.010000
+ExplicitBounds #2: 0.025000
+ExplicitBounds #3: 0.050000
+ExplicitBounds #4: 0.075000
+ExplicitBounds #5: 0.100000
+ExplicitBounds #6: 0.250000
+ExplicitBounds #7: 0.500000
+ExplicitBounds #8: 0.750000
+ExplicitBounds #9: 1.000000
+ExplicitBounds #10: 2.500000
+ExplicitBounds #11: 5.000000
+ExplicitBounds #12: 7.500000
+ExplicitBounds #13: 10.000000
+Buckets #0, Count: 0
+Buckets #1, Count: 0
+Buckets #2, Count: 0
+Buckets #3, Count: 0
+Buckets #4, Count: 0
+Buckets #5, Count: 0
+Buckets #6, Count: 31
+Buckets #7, Count: 2
+Buckets #8, Count: 0
+Buckets #9, Count: 0
+Buckets #10, Count: 0
+Buckets #11, Count: 0
+Buckets #12, Count: 0
+Buckets #13, Count: 0
+Buckets #14, Count: 0
+ScopeMetrics #2
+ScopeMetrics SchemaURL: https://opentelemetry.io/schemas/1.21.0
+InstrumentationScope opentelemetry.instrumentation.sqlalchemy 0.66b2
+Metric #0
+Descriptor:
+     -> Name: db.client.connections.usage
+     -> Description: The number of connections that are currently in state described by the state attribute.
+     -> Unit: connections
+     -> DataType: Sum
+     -> IsMonotonic: false
+     -> AggregationTemporality: Cumulative
+NumberDataPoints #0
+Data point attributes:
+     -> pool.name: Str(postgresql://db:5432/urbanfix)
+     -> state: Str(idle)
+StartTimestamp: 2026-11-06 18:29:06.208693444 +0000 UTC
+Timestamp: 2026-11-06 18:41:47.1355424 +0000 UTC
+Value: 3
+NumberDataPoints #1
+Data point attributes:
+     -> pool.name: Str(postgresql://db:5432/urbanfix)
+     -> state: Str(used)
+StartTimestamp: 2026-11-06 18:29:06.20885073 +0000 UTC
+Timestamp: 2026-11-06 18:41:47.1355424 +0000 UTC
+Value: -1
+        {"resource": {"service.instance.id": "813e03e8-3e7c-4224-af46-454620c17545", "service.name": "otelcol", "service.version": "0.164.0"}, "otelcol.component.id": "debug", "otelcol.component.kind": "exporter", "otelcol.signal": "metrics"}

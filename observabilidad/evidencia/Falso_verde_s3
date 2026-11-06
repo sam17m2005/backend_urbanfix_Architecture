@@ -1,0 +1,192 @@
+PS C:\Users\Casa\OneDrive\Documentos\UrbanFix_arquitectura\UrbanFix_back\backend_urbanfix_Architecture> docker compose -f docker-compose.yml -f docker-compose.observabilidad.yml exec backend python observabilidad/probar_local.py
+{"ts": "2026-11-06T18:39:39.563+00:00", "level": "INFO", "logger": "urbanfix", "msg": "Observabilidad activa", "evento": "observabilidad_iniciada"}
+
+==============================================================================
+1) Login correcto (200): log JSON + traza peticion -> consultas SQL
+==============================================================================
+{"ts": "2026-11-06T18:39:40.077+00:00", "level": "INFO", "logger": "urbanfix", "msg": "peticion", "trace_id": "c174a4cbf8ee7f1f7a6eb756d588babb", "span_id": "275bc6e7600578b5", "evento": "http_request", "request_id": "demo-login-ok", "endpoint": "/login", "method": "POST", "status": 200, "duration_ms": 181.8}
+  respuesta: 200  X-Request-ID=demo-login-ok
+  trace_id=c174a4cbf8ee7f1f7a6eb756d588babb
+  - POST /login  [UNSET] 183.5 ms http=200
+    - connect  [UNSET] 0.3 ms
+    - SELECT /tmp/urbanfix-obs-is5yaox0/prueba.db  [UNSET] 0.2 ms sql='SELECT usuarios.id AS usuarios_id, usuarios.nombre AS usuari'
+    - SELECT /tmp/urbanfix-obs-is5yaox0/prueba.db  [UNSET] 0.2 ms sql='SELECT funcionarios.id AS funcionarios_id, funcionarios.nomb'
+
+==============================================================================
+2) Login fallido (401): el log deja el evento con su codigo
+==============================================================================
+{"ts": "2026-11-06T18:39:40.251+00:00", "level": "WARNING", "logger": "urbanfix", "msg": "peticion", "trace_id": "e9c917ad7c4ffa6cbe82fb1f2ee064e3", "span_id": "5c7106325761aa0a", "evento": "http_request", "request_id": "2f92dce86406438b8194cb43e2df9a22", "endpoint": "/login", "method": "POST", "status": 401, "duration_ms": 170.9}
+
+==============================================================================
+3) F-05 · S3 inalcanzable: POST /reportes responde 201 (falso verde) pero el fallo NO pasa desapercibido
+==============================================================================
+{"ts": "2026-11-06T18:39:40.294+00:00", "level": "ERROR", "logger": "urbanfix", "msg": "Fallo al subir a S3", "trace_id": "2e2b291c19af3f7c8fbdd28ec84c0545", "span_id": "f13c0e5dd0e6e35e", "evento": "s3_upload_failed", "bucket": "bucket-prueba", "error_tipo": "EndpointConnectionError"}
+{"ts": "2026-11-06T18:39:40.320+00:00", "level": "INFO", "logger": "urbanfix", "msg": "peticion", "trace_id": "2e2b291c19af3f7c8fbdd28ec84c0545", "span_id": "f13c0e5dd0e6e35e", "evento": "http_request", "request_id": "bf6645dce5204298bc5bbd0b94d32bae", "endpoint": "/reportes", "method": "POST", "status": 201, "duration_ms": 66.3}
+  respuesta HTTP: 201  (el cliente ve exito)
+  trace_id=2e2b291c19af3f7c8fbdd28ec84c0545
+  - POST /reportes  [UNSET] 67.5 ms http=201
+    - S3.PutObject  [ERROR] 34.8 ms  eventos=['exception']
+    - connect  [UNSET] 1.3 ms
+    - INSERT /tmp/urbanfix-obs-is5yaox0/prueba.db  [UNSET] 0.3 ms sql='INSERT INTO reportes (descripcion, direccion, referencia, la'
+    - connect  [UNSET] 0.3 ms
+    - SELECT /tmp/urbanfix-obs-is5yaox0/prueba.db  [UNSET] 0.3 ms sql='SELECT reportes.id AS reportes_id, reportes.descripcion AS r'
+    - SELECT /tmp/urbanfix-obs-is5yaox0/prueba.db  [UNSET] 0.2 ms sql='SELECT count(apoyos.id) AS count_1 \nFROM apoyos \nWHERE apoyo'
+    - SELECT /tmp/urbanfix-obs-is5yaox0/prueba.db  [UNSET] 0.1 ms sql='SELECT count(apoyos.id) AS count_1 \nFROM apoyos \nWHERE apoyo'
+    - SELECT /tmp/urbanfix-obs-is5yaox0/prueba.db  [UNSET] 0.1 ms sql='SELECT categorias.id AS categorias_id, categorias.nombre AS '
+    - SELECT /tmp/urbanfix-obs-is5yaox0/prueba.db  [UNSET] 0.1 ms sql='SELECT usuarios.id AS usuarios_id, usuarios.nombre AS usuari'
+
+==============================================================================
+3b) F-07 · imagen corrupta: tambien responde 201, y el log dice por que
+==============================================================================
+{"ts": "2026-11-06T18:39:40.393+00:00", "level": "ERROR", "logger": "urbanfix", "msg": "Fallo al subir a S3", "trace_id": "71c2d50fcd8913e23dcfc4fe7e19ac5e", "span_id": "d032cd3ab09a1811", "evento": "s3_upload_failed", "bucket": "bucket-prueba", "error_tipo": "UnidentifiedImageError"}
+{"ts": "2026-11-06T18:39:40.407+00:00", "level": "INFO", "logger": "urbanfix", "msg": "peticion", "trace_id": "71c2d50fcd8913e23dcfc4fe7e19ac5e", "span_id": "d032cd3ab09a1811", "evento": "http_request", "request_id": "fd54fb6f2e564bb49624408e9c770441", "endpoint": "/reportes", "method": "POST", "status": 201, "duration_ms": 81.5}
+  respuesta HTTP: 201  (el cliente ve exito)
+
+==============================================================================
+4) F-03 · la BD falla: /login lanza excepcion (500) y /health responde 503
+==============================================================================
+{"ts": "2026-11-06T18:39:40.413+00:00", "level": "ERROR", "logger": "app", "msg": "Exception on /login [POST]", "trace_id": "d9854711470a20d21db3769cce9cf2b1", "span_id": "50518ce48adef75b", "exc": "Traceback (most recent call last):\n  File \"/app/.venv/lib/python3.13/site-packages/flask/app.py\", line 1511, in wsgi_app\n    response = self.full_dispatch_request()\n  File \"/app/.venv/lib/python3.13/site-packages/flask/app.py\", line 919, in full_dispatch_request\n    rv = self.handle_user_exception(e)\n  File \"/app/.venv/lib/python3.13/site-packages/flask/app.py\", line 917, in full_dispatch_request\n    rv = self.dispatch_request()\n  File \"/app/.venv/lib/python3.13/site-packages/flask/app.py\", line 902, in dispatch_request\n    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]\n           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^\n  File \"/app/app/routes.py\", line 50, in login\n    user = Usuario.query.filter_by(email=email).first()\n  File \"/app/.venv/lib/python3.13/site-packages/sqlalchemy/orm/query.py\", line 2759, in first\n    return self.limit(1)._iter().first()  # type: ignore\n           ~~~~~~~~~~~~~~~~~~~^^\n  File \"/app/.venv/lib/python3.13/site-packages/sqlalchemy/orm/query.py\", line 2857, in _iter\n    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(\n                                                  ~~~~~~~~~~~~~~~~~~~~^\n        statement,\n        ^^^^^^^^^^\n        params,\n        ^^^^^^^\n        execution_options={\"_sa_orm_load_options\": self.load_options},\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/usr/local/lib/python3.13/unittest/mock.py\", line 1169, in __call__\n    return self._mock_call(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.13/unittest/mock.py\", line 1173, in _mock_call\n    return self._execute_mock_call(*args, **kwargs)\n           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.13/unittest/mock.py\", line 1234, in _execute_mock_call\n    raise effect\nsqlalchemy.exc.OperationalError: (builtins.Exception) conexion rechazada\n[SQL: SELECT 1]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)"}
+{"ts": "2026-11-06T18:39:40.420+00:00", "level": "ERROR", "logger": "urbanfix", "msg": "peticion", "trace_id": "d9854711470a20d21db3769cce9cf2b1", "span_id": "50518ce48adef75b", "evento": "http_request", "request_id": "45669b59a9634e429b2af569d9e71993", "endpoint": "/login", "method": "POST", "status": 500, "duration_ms": 7.5}
+  /login   -> 500
+{"ts": "2026-11-06T18:39:40.427+00:00", "level": "ERROR", "logger": "urbanfix", "msg": "BD no disponible", "evento": "health_bd_fallo", "error_tipo": "OperationalError"}
+{"ts": "2026-11-06T18:39:40.428+00:00", "level": "ERROR", "logger": "urbanfix", "msg": "peticion", "evento": "http_request", "request_id": "30e0dfd1807f4e2d95ae01246dbf525b", "endpoint": "/health", "method": "GET", "status": 503, "duration_ms": 0.5}
+  /health  -> 503 {'bd': 'error', 'estado': 'degradado'}
+
+==============================================================================
+5) /health con la BD sana
+==============================================================================
+  /health  -> 200 {'bd': 'ok', 'estado': 'ok'}
+
+==============================================================================
+6) Metricas recogidas (resumen)
+==============================================================================
+  http.server.request.duration           n=1 suma=0.2  {'http.request.method': 'POST', 'http.response.status_code': 200, 'http.route': '/login'}
+  http.server.request.duration           n=1 suma=0.2  {'http.request.method': 'POST', 'http.response.status_code': 401, 'http.route': '/login'}
+  http.server.request.duration           n=2 suma=0.2  {'http.request.method': 'POST', 'http.response.status_code': 201, 'http.route': '/reportes'}
+  http.server.request.duration           n=1 suma=0.0  {'http.request.method': 'POST', 'http.response.status_code': 500, 'http.route': '/login'}
+  urbanfix.s3.upload.failures                       1  {'bucket': 'bucket-prueba', 'error_tipo': 'EndpointConnectionError'}
+  urbanfix.s3.upload.failures                       1  {'bucket': 'bucket-prueba', 'error_tipo': 'UnidentifiedImageError'}
+  urbanfix.db.pool.connections                      0  {'estado': 'en_uso'}
+  urbanfix.db.pool.connections                      5  {'estado': 'tamano'}
+  urbanfix.db.pool.connections                      0  {'estado': 'desborde'}
+PS C:\Users\Casa\OneDrive\Documentos\UrbanFix_arquitectura\UrbanFix_back\backend_urbanfix_Architecture> docker logs urbanfix-otel-collector --tail 120
+     -> Unit: 1
+     -> DataType: Gauge
+NumberDataPoints #0
+Data point attributes:
+     -> estado: Str(en_uso)
+StartTimestamp: 1970-01-01 00:00:00 +0000 UTC
+Timestamp: 2026-11-06 18:39:57.039780695 +0000 UTC
+Value: 0
+NumberDataPoints #1
+Data point attributes:
+     -> estado: Str(tamano)
+StartTimestamp: 1970-01-01 00:00:00 +0000 UTC
+Timestamp: 2026-11-06 18:39:57.039780695 +0000 UTC
+Value: 5
+NumberDataPoints #2
+Data point attributes:
+     -> estado: Str(desborde)
+StartTimestamp: 1970-01-01 00:00:00 +0000 UTC
+Timestamp: 2026-11-06 18:39:57.039780695 +0000 UTC
+Value: 0
+ScopeMetrics #1
+ScopeMetrics SchemaURL: https://opentelemetry.io/schemas/1.21.0
+InstrumentationScope opentelemetry.instrumentation.flask 0.66b2
+Metric #0
+Descriptor:
+     -> Name: http.server.active_requests
+     -> Description: Number of active HTTP server requests.
+     -> Unit: {request}
+     -> DataType: Sum
+     -> IsMonotonic: false
+     -> AggregationTemporality: Cumulative
+NumberDataPoints #0
+Data point attributes:
+     -> http.request.method: Str(GET)
+     -> url.scheme: Str(http)
+StartTimestamp: 2026-11-06 18:29:06.129951378 +0000 UTC
+Timestamp: 2026-11-06 18:39:57.039780695 +0000 UTC
+Value: 0
+NumberDataPoints #1
+Data point attributes:
+     -> http.request.method: Str(POST)
+     -> url.scheme: Str(http)
+StartTimestamp: 2026-11-06 18:29:27.926184994 +0000 UTC
+Timestamp: 2026-11-06 18:39:57.039780695 +0000 UTC
+Value: 0
+Metric #1
+Descriptor:
+     -> Name: http.server.request.duration
+     -> Description: Duration of HTTP server requests.
+     -> Unit: s
+     -> DataType: Histogram
+     -> AggregationTemporality: Cumulative
+HistogramDataPoints #0
+Data point attributes:
+     -> http.request.method: Str(POST)
+     -> url.scheme: Str(http)
+     -> network.protocol.version: Str(1.1)
+     -> http.response.status_code: Int(200)
+     -> http.route: Str(/login)
+StartTimestamp: 2026-11-06 18:29:28.159489243 +0000 UTC
+Timestamp: 2026-11-06 18:39:57.039780695 +0000 UTC
+Count: 1
+Sum: 0.233341
+Min: 0.233341
+Max: 0.233341
+ExplicitBounds #0: 0.005000
+ExplicitBounds #1: 0.010000
+ExplicitBounds #2: 0.025000
+ExplicitBounds #3: 0.050000
+ExplicitBounds #4: 0.075000
+ExplicitBounds #5: 0.100000
+ExplicitBounds #6: 0.250000
+ExplicitBounds #7: 0.500000
+ExplicitBounds #8: 0.750000
+ExplicitBounds #9: 1.000000
+ExplicitBounds #10: 2.500000
+ExplicitBounds #11: 5.000000
+ExplicitBounds #12: 7.500000
+ExplicitBounds #13: 10.000000
+Buckets #0, Count: 0
+Buckets #1, Count: 0
+Buckets #2, Count: 0
+Buckets #3, Count: 0
+Buckets #4, Count: 0
+Buckets #5, Count: 0
+Buckets #6, Count: 1
+Buckets #7, Count: 0
+Buckets #8, Count: 0
+Buckets #9, Count: 0
+Buckets #10, Count: 0
+Buckets #11, Count: 0
+Buckets #12, Count: 0
+Buckets #13, Count: 0
+Buckets #14, Count: 0
+ScopeMetrics #2
+ScopeMetrics SchemaURL: https://opentelemetry.io/schemas/1.21.0
+InstrumentationScope opentelemetry.instrumentation.sqlalchemy 0.66b2
+Metric #0
+Descriptor:
+     -> Name: db.client.connections.usage
+     -> Description: The number of connections that are currently in state described by the state attribute.
+     -> Unit: connections
+     -> DataType: Sum
+     -> IsMonotonic: false
+     -> AggregationTemporality: Cumulative
+NumberDataPoints #0
+Data point attributes:
+     -> pool.name: Str(postgresql://db:5432/urbanfix)
+     -> state: Str(idle)
+StartTimestamp: 2026-11-06 18:29:06.208693444 +0000 UTC
+Timestamp: 2026-11-06 18:39:57.039780695 +0000 UTC
+Value: 2
+NumberDataPoints #1
+Data point attributes:
+     -> pool.name: Str(postgresql://db:5432/urbanfix)
+     -> state: Str(used)
+StartTimestamp: 2026-11-06 18:29:06.20885073 +0000 UTC
+Timestamp: 2026-11-06 18:39:57.039780695 +0000 UTC
+Value: -1
+        {"resource": {"service.instance.id": "813e03e8-3e7c-4224-af46-454620c17545", "service.name": "otelcol", "service.version": "0.164.0"}, "otelcol.component.id": "debug", "otelcol.component.kind": "exporter", "otelcol.signal": "metrics"}

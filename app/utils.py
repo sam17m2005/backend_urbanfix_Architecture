@@ -5,6 +5,7 @@ from PIL import Image
 from flask import request, jsonify 
 from config import Config
 from . import s3_client
+from .observabilidad import registrar_fallo_s3
 
 S3_REPORTES = Config.S3_REPORTES
 S3_PERFILES = Config.S3_PERFILES 
@@ -37,7 +38,7 @@ def upload_base64_to_s3(base64_string):
         return f"https://{S3_REPORTES}.s3.{Config.AWS_REGION}.amazonaws.com/{file_name}"
 
     except Exception as e:
-        print(f"Error al subir a S3: {e}")
+        registrar_fallo_s3(e, S3_REPORTES)
         # Retorna la URL generada para que el reporte se inserte en la base de datos
         return f"https://{S3_REPORTES}.s3.{Config.AWS_REGION}.amazonaws.com/{file_name}"
     
@@ -70,5 +71,5 @@ def upload_profile_pic_to_s3(base64_string):
         return s3_url
 
     except Exception as e:
-        print(f"Error al subir a S3: {e}")
+        registrar_fallo_s3(e, S3_PERFILES)
         return None

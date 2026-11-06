@@ -1,0 +1,22 @@
+[A07] POST /login con correo inexistente vs. correo existente con clave mala
+      esperado si fuera seguro: mismo codigo y mismo mensaje | obtenido: 404 vs 401 -> 'La cuenta no existe. Por favor, regístrate.' vs 'Credenciales incorrectas'
+[A07] 30 intentos fallidos seguidos contra la misma cuenta, sin pausa
+      esperado si fuera seguro: bloqueo o 429 antes del intento 30 | obtenido: codigos [401] (3.0 s)
+[A07] Respuesta de un login correcto
+      esperado si fuera seguro: un token firmado con expiracion | obtenido: 200, claves ['message', 'role', 'user_data'] (sin token ni sesion: no hay forma de probar identidad despues)
+[A01] GET /usuarios/2 sin credenciales (datos de otra persona)
+      esperado si fuera seguro: 401/403 | obtenido: 200 -> expone ['email', 'telefono']
+[A01] GET /misreportes?user_id=1 sin credenciales (el id lo elige quien llama)
+      esperado si fuera seguro: 401/403 | obtenido: 200
+[A01] PUT /reportes/1/estado con cabeceras 'User-Role: funcionario' inventadas
+      esperado si fuera seguro: 401/403 | obtenido: 200 -> estado ahora 'Resuelto'
+[A01] POST /funcionarios sin credenciales (crear una cuenta con rol de funcionario)
+      esperado si fuera seguro: 401/403 | obtenido: 201
+[A01] DELETE /usuarios/2 sin credenciales
+      esperado si fuera seguro: 401/403 | obtenido: 200 -> despues, GET /usuarios/2 = 404 (la cuenta ya no existe)
+[A02] GET /test-deploy (endpoint de prueba en el codigo de produccion)
+      esperado si fuera seguro: 404 | obtenido: 200 -> '<h1>Funciona pe causa v2<h1>'
+[A02] app.py arranca el servidor con debug=True y host 0.0.0.0
+      esperado si fuera seguro: debug=False | obtenido: debug=True (el Dockerfile ejecuta `python3 app.py`)
+
+Resumen: {"A07": 3, "A01": 5, "A02": 2}
