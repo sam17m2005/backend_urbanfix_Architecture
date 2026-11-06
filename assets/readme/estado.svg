@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="420" viewBox="0 0 900 420">
+<foreignObject x="0" y="0" width="900" height="420">
+<div xmlns="http://www.w3.org/1999/xhtml" class="r">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.r{font-family:-apple-system,"Segoe UI","Helvetica Neue",Arial,sans-serif;color:#1f2a36;font-size:15px;line-height:1.55;width:100%;height:100%}
+b{font-weight:700}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;background:#e3e7e4;border-radius:4px;padding:1px 5px}
+.oscuro code{background:#4a5158;color:#f4f5f3}
+
+.h{font-weight:800;font-size:28px;margin:0 0 10px 2px}
+.lead{margin:0 0 16px 2px;font-size:15.5px}
+.dos{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.card{background:#fff;border:1px solid #d5d9d6;border-radius:14px;padding:18px 20px}
+.card.activa{border:2px solid #1e6b52;background:#f3faf6}
+.tag{display:inline-flex;align-items:center;gap:7px;font-weight:800;font-size:13px;color:#5b6773;margin-bottom:8px}
+.tag.verde{color:#1e6b52}
+.dot{width:10px;height:10px;border-radius:50%;background:#1e6b52;display:inline-block}
+.dot.gris{background:#9aa3a0}
+.card p{font-size:14.5px}
+.decir{margin-top:14px;background:#343a40;color:#e6e9e7;border-left:6px solid #f5c518;border-radius:10px;padding:14px 18px;font-size:14.5px}
+.decir b{color:#fff}
+</style>
+
+<div class="h">Nota sobre el estado actual del despliegue</div>
+<p class="lead">Este README documenta <b>dos configuraciones distintas</b> que conviven en el proyecto, para evitar confusiones:</p>
+<div class="dos">
+  <div class="card"><div class="tag"><span class="dot gris"></span>1</div>
+   <p><b>Configuración original del proyecto:</b> despliegue en una instancia <b>AWS EC2</b>, con <b>GitHub Actions</b> para CI/CD (descrita en la sección <u>Despliegue y CI/CD</u> más abajo). Esta configuración sigue documentada porque fue parte del diseño original del proyecto, pero <b>no representa el flujo de trabajo actual</b>.</p></div>
+  <div class="card activa"><div class="tag verde"><span class="dot"></span>2</div>
+   <p><b>Configuración actual (activa):</b> el backend ahora se ejecuta dentro de un <b>contenedor Docker</b>, y <b>de momento el uso de Docker es solo local</b> (para desarrollo). No hay, por ahora, un pipeline de CI/CD ni despliegue en EC2 usando la imagen Docker.</p></div>
+</div>
+<div class="decir">Es decir: <b>el flujo con EC2 + GitHub Actions no ha sido eliminado del repositorio, pero actualmente no se está usando</b>. El flujo vigente para correr el proyecto es Docker en local.</div>
+
+</div>
+</foreignObject>
+</svg>

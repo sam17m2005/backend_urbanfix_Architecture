@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="440" viewBox="0 0 900 440">
+<foreignObject x="0" y="0" width="900" height="440">
+<div xmlns="http://www.w3.org/1999/xhtml" class="r">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.r{font-family:-apple-system,"Segoe UI","Helvetica Neue",Arial,sans-serif;color:#1f2a36;font-size:15px;line-height:1.55;width:100%;height:100%}
+b{font-weight:700}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;background:#e3e7e4;border-radius:4px;padding:1px 5px}
+.oscuro code{background:#4a5158;color:#f4f5f3}
+
+.lead{font-size:15.5px;margin:2px 0 14px 2px}
+.f{background:#fff;border:1px solid #d5d9d6;border-radius:14px;overflow:hidden}
+.i{display:grid;grid-template-columns:170px 1fr;gap:12px;padding:12px 18px;border-top:1px solid #e3e7e4;font-size:14.5px}
+.i:first-child{border-top:0}
+.k{font-weight:700}
+.h3{font-weight:800;font-size:16px;margin:22px 0 12px 2px}
+.fl{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;position:relative}
+.p{background:#fff;border:1px solid #d5d9d6;border-radius:12px;padding:14px 12px 14px;font-size:13.5px;line-height:1.45;position:relative}
+.p:not(:last-child)::after{content:"";position:absolute;right:-11px;top:26px;width:12px;border-top:3px dashed #f5c518}
+.n{width:30px;height:30px;border-radius:7px;background:#f5c518;font-weight:900;display:flex;align-items:center;justify-content:center;margin-bottom:9px}
+.x code{font-size:12px}
+</style>
+
+<p class="lead">Este proyecto fue configurado en su momento para <b>despliegue continuo</b> usando <b>GitHub Actions</b>.</p>
+<div class="f">
+ <div class="i"><div class="k">Servidor:</div><div>AWS EC2 (t2.micro) corriendo Ubuntu.</div></div>
+ <div class="i"><div class="k">IP del Servidor:</div><div><code>http://54.144.11.53:5000</code> (IP Elástica permanente).</div></div>
+ <div class="i"><div class="k">Proceso:</div><div>El servidor corre como un servicio <code>systemd</code> (<code>urbanfix.service</code>) usando Gunicorn.</div></div>
+</div>
+<div class="h3">El flujo de despliegue automático (original) era el siguiente:</div>
+<div class="fl"><div class="p"><div class="n">1</div><div class="x">Un desarrollador hace <code>git push</code> a la rama <code>main</code>.</div></div><div class="p"><div class="n">2</div><div class="x">GitHub Actions se activa automáticamente.</div></div><div class="p"><div class="n">3</div><div class="x">La Acción se conecta por SSH al servidor EC2.</div></div><div class="p"><div class="n">4</div><div class="x">Ejecuta <code>git pull</code> para descargar los nuevos cambios.</div></div><div class="p"><div class="n">5</div><div class="x">Reinicia el servicio (<code>sudo systemctl restart urbanfix</code>) para aplicar las actualizaciones.</div></div></div>
+
+</div>
+</foreignObject>
+</svg>
