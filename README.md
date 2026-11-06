@@ -1,33 +1,28 @@
-# UrbanFix Backend
-Este es el repositorio del servidor backend para UrbanFix, una aplicación móvil diseñada para reportar daños o incidencias en el espacio público de manera rápida y eficiente.
-El objetivo de este backend es gestionar toda la lógica de negocio, autenticación de usuarios/funcionarios, creación de reportes, y el almacenamiento de datos (PostgreSQL) e imágenes (AWS S3). El servidor está construido en Python usando el framework Flask.
+<a name="inicio"></a>
+<h1 align="center"><img src="assets/readme/hero.svg" width="100%" alt="UrbanFix Backend. Este es el repositorio del servidor backend para UrbanFix, una aplicación móvil diseñada para reportar daños o incidencias en el espacio público de manera rápida y eficiente. El objetivo de este backend es gestionar toda la lógica de negocio, autenticación de usuarios/funcionarios, creación de reportes, y el almacenamiento de datos (PostgreSQL) e imágenes (AWS S3). El servidor está construido en Python usando el framework Flask."></h1>
 
----
+<p align="center">
+  <a href="#tecnologias"><b>Tecnologías</b></a> &nbsp;&nbsp;|&nbsp;&nbsp;
+  <a href="#estado"><b>Estado del despliegue</b></a> &nbsp;&nbsp;|&nbsp;&nbsp;
+  <a href="#desarrollo"><b>Desarrollo local</b></a> &nbsp;&nbsp;|&nbsp;&nbsp;
+  <a href="#pruebas"><b>Pruebas de carga</b></a> &nbsp;&nbsp;|&nbsp;&nbsp;
+  <a href="#despliegue"><b>Despliegue y CI/CD</b></a>
+</p>
 
-## Tecnologías 
-* **Lenguaje:** Python 3.10+
-* **Framework:** Flask (con Blueprints)
-* **Base de Datos:** PostgreSQL (gestionada en [Neon](https://neon.tech/))
-* **ORM:** SQLAlchemy con Flask-Migrate (para migraciones)
-* **Servidor de App (Producción):** Gunicorn
-* **Almacenamiento (Archivos):** AWS S3 (para imágenes de reportes y fotos de perfil)
-* **Contenedores:** Docker
-* **Despliegue Continuo:** GitHub Actions
+<br>
 
----
+<a name="tecnologias"></a>
+<p align="center"><img src="assets/readme/tecnologias.svg" width="100%" alt="Tecnologías: Lenguaje Python 3.10+; Framework Flask (con Blueprints); Base de Datos PostgreSQL (gestionada en Neon); ORM SQLAlchemy con Flask-Migrate (para migraciones); Servidor de App (Producción) Gunicorn; Almacenamiento (Archivos) AWS S3 (para imágenes de reportes y fotos de perfil); Contenedores Docker; Despliegue Continuo GitHub Actions."></p>
 
-## Nota sobre el estado actual del despliegue
+<br>
 
-Este README documenta **dos configuraciones distintas** que conviven en el proyecto, para evitar confusiones:
+<a name="estado"></a>
+<p align="center"><img src="assets/readme/estado.svg" width="100%" alt="Nota sobre el estado actual del despliegue. Este README documenta dos configuraciones distintas que conviven en el proyecto: 1. Configuración original del proyecto: despliegue en una instancia AWS EC2, con GitHub Actions para CI/CD; no representa el flujo de trabajo actual. 2. Configuración actual (activa): el backend se ejecuta dentro de un contenedor Docker, de momento solo local. Es decir: el flujo con EC2 + GitHub Actions no ha sido eliminado del repositorio, pero actualmente no se está usando. El flujo vigente para correr el proyecto es Docker en local."></p>
 
-1. **Configuración original del proyecto:** despliegue en una instancia **AWS EC2**, con **GitHub Actions** para CI/CD (descrita en la sección [Despliegue y CI/CD](#despliegue-y-cicd) más abajo). Esta configuración sigue documentada porque fue parte del diseño original del proyecto, pero **no representa el flujo de trabajo actual**.
-2. **Configuración actual (activa):** el backend ahora se ejecuta dentro de un **contenedor Docker**, y **de momento el uso de Docker es solo local** (para desarrollo). No hay, por ahora, un pipeline de CI/CD ni despliegue en EC2 usando la imagen Docker.
+<br>
 
-Es decir: **el flujo con EC2 + GitHub Actions no ha sido eliminado del repositorio, pero actualmente no se está usando**. El flujo vigente para correr el proyecto es Docker en local.
-
----
-
-## Configuración para Desarrollo Local
+<a name="desarrollo"></a>
+<h2><img src="assets/readme/seccion-desarrollo.svg" width="100%" alt="Configuración para Desarrollo Local"></h2>
 
 ### Opción A (actual): Usando Docker
 
@@ -54,6 +49,7 @@ Es decir: **el flujo con EC2 + GitHub Actions no ha sido eliminado del repositor
     S3_PERFILES="urbanfixperfilimagenesbucket"
     ```
 
+    > [!TIP]
     > **Nota sobre la base de datos:** `config.py` usa `DATABASE_URL` si existe, y solo si no existe cae a las variables `PGHOST`/`PGUSER`/`PGPASSWORD`/`PGDATABASE` (Neon). Al levantar el proyecto con `docker compose` (paso 3), `DATABASE_URL` ya viene definida en `docker-compose.yml` apuntando a la base de datos local del propio `docker compose`, así que las variables de Neon en el `.env` no son necesarias para este flujo — solo hacen falta las de AWS S3.
 
 3. **Levanta los servicios con Docker Compose:**
@@ -66,16 +62,19 @@ Es decir: **el flujo con EC2 + GitHub Actions no ha sido eliminado del repositor
 
     Para ver los logs: `docker compose logs -f backend`. Para detener todo: `docker compose down`.
 
+    > [!TIP]
     > **Alternativa (sin Postgres local):** si prefieres correr solo el backend contra tu base de datos de Neon (sin levantar el servicio `db`), puedes seguir usando `docker build -t urbanfix-backend .` seguido de `docker run -p 5000:5000 --env-file .env urbanfix-backend`. En ese caso sí necesitas completar las variables de Neon en el `.env`.
 
+> [!NOTE]
 > **Nota:** Las migraciones de base de datos (`flask db upgrade`) deben ejecutarse dentro del contenedor del backend, contra la base de datos que esté activa según `DATABASE_URL` (local, si usaste `docker compose`) o contra Neon (si usaste el flujo alternativo). Con Docker Compose:
 > ```bash
 > docker compose exec backend flask db upgrade
 > ```
 
----
 
-### Opción B (alternativa): Sin Docker, con entorno virtual
+<details>
+<summary><strong>Opción B (alternativa): Sin Docker, con entorno virtual</strong></summary>
+
 
 Si prefieres no usar Docker, también puedes correr el proyecto de forma tradicional:
 
@@ -113,13 +112,17 @@ Si prefieres no usar Docker, también puedes correr el proyecto de forma tradici
     ```
     El servidor estará disponible en `http://127.0.0.1:5000/`.
 
----
+</details>
 
-## Pruebas de carga (k6)
+<br>
+
+<a name="pruebas"></a>
+<h2><img src="assets/readme/seccion-pruebas.svg" width="100%" alt="Pruebas de carga (k6)"></h2>
+
 
 El repositorio incluye dos scripts de carga en `Pruebas/` (`prueba1.js` para `POST /reportes`, `prueba2.js` para `POST /login`). No hace falta instalar k6: se ejecutan con la imagen oficial de Docker, pasándole el script por entrada estándar.
 
-Con el backend ya corriendo (ver [Configuración para Desarrollo Local](#configuración-para-desarrollo-local)):
+Con el backend ya corriendo (ver [Configuración para Desarrollo Local](#desarrollo)):
 
 ```powershell
 # Windows (PowerShell)
@@ -131,23 +134,17 @@ Get-Content Pruebas\prueba2.js | docker run --rm -i grafana/k6 run -
 docker run --rm -i grafana/k6 run - < Pruebas/prueba2.js
 ```
 
+> [!WARNING]
 > **Nota:** `prueba2.js` apunta al endpoint fijo `http://172.18.0.1:5000/login` (la IP de gateway de la red bridge por defecto de `docker run`). Si el backend se levantó con `docker compose` en lugar de `docker run` suelto, esa IP puede no ser la del gateway correcto — verifícala antes de correr la prueba, o ajusta la URL en el script.
 
----
+<br>
 
-## Despliegue y CI/CD
+<a name="despliegue"></a>
+<h2><img src="assets/readme/seccion-despliegue.svg" width="100%" alt="Despliegue y CI/CD"></h2>
 
+> [!IMPORTANT]
 > **Importante:** Esta sección describe la configuración de despliegue **original** del proyecto. Actualmente **no está activa** como flujo de trabajo principal; el proyecto se corre localmente vía Docker (ver arriba). Se conserva esta documentación como referencia histórica/futura, en caso de que se retome el despliegue en la nube.
 
-Este proyecto fue configurado en su momento para **despliegue continuo** usando **GitHub Actions**.
+<p align="center"><img src="assets/readme/despliegue.svg" width="100%" alt="Este proyecto fue configurado en su momento para despliegue continuo usando GitHub Actions. Servidor: AWS EC2 (t2.micro) corriendo Ubuntu. IP del Servidor: http://54.144.11.53:5000 (IP Elástica permanente). Proceso: El servidor corre como un servicio systemd (urbanfix.service) usando Gunicorn. El flujo de despliegue automático (original) era el siguiente: 1. Un desarrollador hace git push a la rama main. 2. GitHub Actions se activa automáticamente. 3. La Acción se conecta por SSH al servidor EC2. 4. Ejecuta git pull para descargar los nuevos cambios. 5. Reinicia el servicio (sudo systemctl restart urbanfix) para aplicar las actualizaciones."></p>
 
-* **Servidor:** AWS EC2 (t2.micro) corriendo Ubuntu.
-* **IP del Servidor:** `http://54.144.11.53:5000` (IP Elástica permanente).
-* **Proceso:** El servidor corre como un servicio `systemd` (`urbanfix.service`) usando Gunicorn.
-
-**El flujo de despliegue automático (original) era el siguiente:**
-1.  Un desarrollador hace `git push` a la rama `main`.
-2.  GitHub Actions se activa automáticamente.
-3.  La Acción se conecta por SSH al servidor EC2.
-4.  Ejecuta `git pull` para descargar los nuevos cambios.
-5.  Reinicia el servicio (`sudo systemctl restart urbanfix`) para aplicar las actualizaciones.
+<p align="right"><a href="#inicio">Volver arriba</a></p>
