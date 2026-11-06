@@ -1,0 +1,102 @@
+PS C:\Users\Casa\OneDrive\Documentos\UrbanFix_arquitectura\UrbanFix_back\backend_urbanfix_Architecture> Invoke-RestMethod http://127.0.0.1:5000/health
+
+bd estado
+-- ------
+ok ok
+
+
+PS C:\Users\Casa\OneDrive\Documentos\UrbanFix_arquitectura\UrbanFix_back\backend_urbanfix_Architecture> Invoke-RestMethod -Method Post -Uri http://127.0.0.1:5000/login -ContentType 'application/json' -Body '{"email":"test@urbanfix.com","contrasena":"PasswordSeguro123!"}'
+
+message                  role    user_data
+-------                  ----    ---------
+Inicio de sesión exitoso usuario @{email=test@urbanfix.com; fecha_registro=2026-08-28T03:08:05.114642; foto_perfil_url=https://urbanfix...
+
+
+PS C:\Users\Casa\OneDrive\Documentos\UrbanFix_arquitectura\UrbanFix_back\backend_urbanfix_Architecture> docker logs urbanfixbackend --tail 10
+{"ts": "2026-11-06T18:28:05.179+00:00", "level": "INFO", "logger": "urbanfix", "msg": "Observabilidad activa", "evento": "observabilidad_iniciada"}
+ * Serving Flask app 'app'
+ * Debug mode: on
+{"ts": "2026-11-06T18:28:06.505+00:00", "level": "INFO", "logger": "urbanfix", "msg": "Observabilidad activa", "evento": "observabilidad_iniciada"}
+{"ts": "2026-11-06T18:28:06.512+00:00", "level": "WARNING", "logger": "werkzeug", "msg": " * Debugger is active!"}
+{"ts": "2026-11-06T18:29:28.157+00:00", "level": "INFO", "logger": "urbanfix", "msg": "peticion", "trace_id": "60c95b77d308407269781523958b8761", "span_id": "e8a2be2fa1ab3665", "evento": "http_request", "request_id": "0b074fac92e4428abb97c349b904ae2a", "endpoint": "/login", "method": "POST", "status": 200, "duration_ms": 230.6}
+PS C:\Users\Casa\OneDrive\Documentos\UrbanFix_arquitectura\UrbanFix_back\backend_urbanfix_Architecture> docker logs urbanfix-otel-collector --tail 80
+     -> http.request.method: Str(POST)
+     -> url.scheme: Str(http)
+StartTimestamp: 2026-11-06 18:29:27.926184994 +0000 UTC
+Timestamp: 2026-11-06 18:29:56.545363127 +0000 UTC
+Value: 0
+Metric #1
+Descriptor:
+     -> Name: http.server.request.duration
+     -> Description: Duration of HTTP server requests.
+     -> Unit: s
+     -> DataType: Histogram
+     -> AggregationTemporality: Cumulative
+HistogramDataPoints #0
+Data point attributes:
+     -> http.request.method: Str(POST)
+     -> url.scheme: Str(http)
+     -> network.protocol.version: Str(1.1)
+     -> http.response.status_code: Int(200)
+     -> http.route: Str(/login)
+StartTimestamp: 2026-11-06 18:29:28.159489243 +0000 UTC
+Timestamp: 2026-11-06 18:29:56.545363127 +0000 UTC
+Count: 1
+Sum: 0.233341
+Min: 0.233341
+Max: 0.233341
+ExplicitBounds #0: 0.005000
+ExplicitBounds #1: 0.010000
+ExplicitBounds #2: 0.025000
+ExplicitBounds #3: 0.050000
+ExplicitBounds #4: 0.075000
+ExplicitBounds #5: 0.100000
+ExplicitBounds #6: 0.250000
+ExplicitBounds #7: 0.500000
+ExplicitBounds #8: 0.750000
+ExplicitBounds #9: 1.000000
+ExplicitBounds #10: 2.500000
+ExplicitBounds #11: 5.000000
+ExplicitBounds #12: 7.500000
+ExplicitBounds #13: 10.000000
+Buckets #0, Count: 0
+Buckets #1, Count: 0
+Buckets #2, Count: 0
+Buckets #3, Count: 0
+Buckets #4, Count: 0
+Buckets #5, Count: 0
+Buckets #6, Count: 1
+Buckets #7, Count: 0
+Buckets #8, Count: 0
+Buckets #9, Count: 0
+Buckets #10, Count: 0
+Buckets #11, Count: 0
+Buckets #12, Count: 0
+Buckets #13, Count: 0
+Buckets #14, Count: 0
+ScopeMetrics #2
+ScopeMetrics SchemaURL: https://opentelemetry.io/schemas/1.21.0
+InstrumentationScope opentelemetry.instrumentation.sqlalchemy 0.66b2
+Metric #0
+Descriptor:
+     -> Name: db.client.connections.usage
+     -> Description: The number of connections that are currently in state described by the state attribute.
+     -> Unit: connections
+     -> DataType: Sum
+     -> IsMonotonic: false
+     -> AggregationTemporality: Cumulative
+NumberDataPoints #0
+Data point attributes:
+     -> pool.name: Str(postgresql://db:5432/urbanfix)
+     -> state: Str(idle)
+StartTimestamp: 2026-11-06 18:29:06.208693444 +0000 UTC
+Timestamp: 2026-11-06 18:29:56.545363127 +0000 UTC
+Value: 1
+NumberDataPoints #1
+Data point attributes:
+     -> pool.name: Str(postgresql://db:5432/urbanfix)
+     -> state: Str(used)
+StartTimestamp: 2026-11-06 18:29:06.20885073 +0000 UTC
+Timestamp: 2026-11-06 18:29:56.545363127 +0000 UTC
+Value: 0
+        {"resource": {"service.instance.id": "813e03e8-3e7c-4224-af46-454620c17545", "service.name": "otelcol", "service.version": "0.164.0"}, "otelcol.component.id": "debug", "otelcol.component.kind": "exporter", "otelcol.signal": "metrics"}
